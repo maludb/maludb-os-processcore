@@ -1,3 +1,15 @@
+# ProcessCore — CLAUDE.md
+
+**This repository is ProcessCore** (`github.com/maludb/maludb-os-processcore`, private; clone `/srv/apps/processcore`): a base
+manufacturing application for converting processes, forked verbatim from `maludb-os-cidery` (commit `adf4733`) on 2026-10-08,
+history kept. **The code below is still the cidery's** — nothing is renamed or cut until the owner answers the plan:
+`docs/processcore-design.md` (D1–D19, build order section 13). The default profile is steel processing (coils → slit coils,
+cut sheets, blanks; heats and mill test reports; scrap by weight). The one rule: *industry is data, not code*.
+Everything that follows is the cidery's CLAUDE.md, kept as the record of what was forked, and it governs the code until
+step 1 of the build order replaces it.
+
+---
+
 # Cidery — CLAUDE.md
 
 A memory-first inventory, receiving and production application for small cideries, built with the `htmx-php-builder`

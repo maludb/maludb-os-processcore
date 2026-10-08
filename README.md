@@ -1,3 +1,12 @@
+# ProcessCore
+
+**A base manufacturing application for converting processes — steel processing the default profile.** Forked from
+[maludb-os-cidery](https://github.com/maludb/maludb-os-cidery) on 2026-10-08 with its history; the plan for turning it into
+the generic application is [docs/processcore-design.md](docs/processcore-design.md) (awaiting the owner's decisions). Until
+that plan's first step lands, the code and everything below is the cidery's.
+
+---
+
 # Cidery
 
 A memory-first, ask-me-anything inventory and production application for small cideries (beer and wine later), built on the htmx-php-builder plugin stack: PostgreSQL 17 + MaluDB, Apache, vanilla PHP 8.3, Bootstrap 5.3 (nxl theme), HTMX, and a set of Python services (MCP servers and a Claude-powered assistant).
