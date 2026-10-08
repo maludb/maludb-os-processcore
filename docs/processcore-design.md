@@ -1,8 +1,9 @@
 # ProcessCore — plan (a generic processing ERP, forked from Cidery; steel processing the default profile)
 
 **Date:** 2026-10-08
-**Status:** PLANNED — awaiting the owner's answers to section 12 (D1–D19). Nothing of the code has changed yet: this
-repository is a verbatim fork of `maludb-os-cidery` at its commit `adf4733` (equipment scheduling, 2026-10-08), history
+**Status:** APPROVED 2026-10-08 — the owner took every recommendation of section 12 (D1–D19); section 16 records it.
+The build order of section 13 is under way; `docs/processcore-progress.md` is the record step by step. Before step 1 this
+repository was a verbatim fork of `maludb-os-cidery` at its commit `adf4733` (equipment scheduling, 2026-10-08), history
 kept, pushed to `github.com/maludb/maludb-os-processcore` (private) and cloned at `/srv/apps/processcore`. When the
 answers are in, step 1 of section 13 begins; the design doc with the schema files follows the cidery's own pattern
 (plan → design + `db/` → progress), proven on a scratch database before a screen is written.
@@ -304,12 +305,19 @@ releases; customer specifications and PPAP; EN 10204 3.1/3.2 certificate templat
 mixed-heat coils (two heats on one lot — `lot_attributes` already admits a list); laser and plasma operations with
 nesting; a mill EDI feed; a second profile (aluminium, then paper or lumber) to prove section 6.
 
-## 16. The owner's answers
+## 16. The owner's answers (2026-10-08 — rules, not questions)
 
-(none yet)
+The owner accepted every recommendation of section 12: D1 the names `processcore` / "ProcessCore" / `processcore.<domain>`;
+D2 the schema rewritten in place; D3 the batch removed from the core, the run the unit of execution; D4 pieces and weight
+everywhere; D5 typed attribute definitions per item class; D6 equipment capabilities as warnings; D7 certificates, heat
+flow-down and period reports over the line map; D8 printable BOL and packing list; D9 the price basis on order lines;
+D10 kegs Extended as containers; D11 the cidery's costing; D12 profiles as seed + skills + `PROCESS_PROFILE`, steel the
+default, forks for screens; D13 the expert + the Shift Planner; D14 the seven roles; D15 ports 8189/8839/8840 and the
+`manufacturing` category (K29); D16 private; D17 the two ways to run kept; D18 the planning model through step 5, Sonnet
+workers for 6–8; D19 proven on `processcore_dev`, never live.
 
 ## 17. State
 
-- 2026-10-08: the fork (repository, clone, push) and this plan. The repository is still the cidery's code; the
-  README and CLAUDE.md carry a preamble pointing here. Kernel: the CLAUDE.md and README entries written the same day;
-  K29 not built.
+- 2026-10-08: the fork (repository, clone, push) and this plan; approved the same day, every recommendation. Kernel:
+  the CLAUDE.md and README entries written the same day; K29 not built. The build order starts with step 1 the same day
+  (`docs/processcore-progress.md`).
