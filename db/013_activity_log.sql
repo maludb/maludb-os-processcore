@@ -1,6 +1,5 @@
--- 013_activity_log.sql — the activity log (day one) and its ingestion into
--- MaluDB. Every handler writes a row; a timer job ships rows into the memory
--- schema as episodes plus subject-verb-object edges.
+-- 013_activity_log.sql — the activity log (day one) and its ingestion into MaluDB. Every handler writes a row; a
+-- timer job ships rows into the memory schema as episodes plus subject-verb-object edges. Unchanged from the cidery.
 SET search_path = app, public;
 
 CREATE TABLE app.activity_log (
@@ -8,7 +7,7 @@ CREATE TABLE app.activity_log (
     occurred_at       timestamptz NOT NULL DEFAULT now(),
     actor_id          bigint REFERENCES app.users(id),       -- NULL = system
     actor_label       text NOT NULL,                         -- 'user/12 Jane Doe', 'system/ingest', 'mcp/token:nightly'
-    source            text NOT NULL DEFAULT 'screen' CHECK (source IN ('screen','command_bar','ama','mcp','system')),
+    source            text NOT NULL DEFAULT 'screen' CHECK (source IN ('screen','command_bar','ama','mcp','system','agent','cron','api','web')),
     session_hash      text,                                  -- sha256 of the PHP session id
     request_id        text,
     action            text NOT NULL,                         -- 'screen_entered', 'lot_released', 'receipt_posted', ...
@@ -20,6 +19,7 @@ CREATE TABLE app.activity_log (
     after             jsonb,
     details           jsonb NOT NULL DEFAULT '{}'::jsonb,
     ip                inet,
+    agent_run_id      bigint,                                -- the kernel's run id when an agent acted (no FK)
     ingested_at       timestamptz,
     memory_episode_id bigint
 );
@@ -44,11 +44,9 @@ RETURNS bigint LANGUAGE sql AS $$
     RETURNING id;
 $$;
 
--- Ingestion into MaluDB: each activity row becomes an episode (the event with
--- its full payload) and one SVO edge (actor -verb-> entity) in the 'activity'
--- namespace, so both replay and graph questions work. Runs under processcore_app,
--- whose search_path includes the memory schema. Called by the systemd timer
--- in deploy/processcore-activity-ingest.timer every minute.
+-- Ingestion into MaluDB: each activity row becomes an episode (the event with its full payload) and one SVO edge
+-- (actor -verb-> entity) in the 'activity' namespace, so both replay and graph questions work. Runs under
+-- processcore_app, whose search_path includes the memory schema. Called by the systemd timer every minute.
 CREATE OR REPLACE FUNCTION app.activity_ingest_pending(p_limit int DEFAULT 500)
 RETURNS int LANGUAGE plpgsql AS $$
 DECLARE

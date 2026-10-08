@@ -10,7 +10,7 @@ tenant database.
 |---|---|---|---|
 | 0 | The fork | Done 2026-10-08 | `maludb-os-processcore` (private) = `maludb-os-cidery` adf4733 with history; clone `/srv/apps/processcore`; the plan; approved the same day |
 | 1 | The rename sweep | Done 2026-10-08 | See below; `scripts/prove-rename.sh`: 43 checks |
-| 2 | The schema, in place (D2) | — | |
+| 2 | The schema, in place (D2) | Done 2026-10-08 | See below; `scripts/prove-schema.sh`: 283 checks; design `processcore-schema.md` |
 | 3 | The cut | — | |
 | 4 | Runs — the exemplar | — | |
 | 5 | The steel profile and the lot | — | |
@@ -45,3 +45,34 @@ tenant database.
   from `services/.venv` on 8839/8840, initialize under their new names, list 89 tools, answer `app_roles` with the seven
   roles and `processcore.admin`, refuse an unknown token; `php /var/www/bin/app_install.php plan` reads the manifest
   clean (23 steps, 5 notes).
+
+## Step 2 — the schema, in place (2026-10-08)
+
+- **The files:** `db/002–016` rewritten as ProcessCore's own (the cidery's 002–023 removed from the tree; git has them),
+  `db/020_grants.sql`, `db/profiles/steel/seed.sql`, `db/README.md`. 93 tables, 16 views. The design and the rules are
+  [processcore-schema.md](processcore-schema.md).
+- **What is new against the cidery:** sites for premises; units with length and area and cwt; item classes with
+  `lot_noun`, `serialized`, `catch_weight`, `lot_number_key`, `density_kg_m3`; the attribute dictionary
+  (`attribute_definitions`, `item_class_attributes`, values on items, products and lots, `lot_attributes_fill()`);
+  `weight_kg` on lots, ledger rows, balances, run lines, order lines and shipment lines (D4); `weigh_tickets` and
+  `certificates` for weigh tags and CoAs; the ledger without tax state; `operations` for stages, `process_specs` for
+  recipes; `runs` with inputs, outputs and consumables for press runs and batches (D3); `lot_lineage`; `inspections`
+  for sensory; `shipments` for removals; `report_line_map` and generic `period_reports` for the TTB forms (D7);
+  orders with a `price_basis` (D9); equipment with `capabilities` and `equipment_fits()` (D6), reservations on
+  equipment alone; `heat_where_used()`; the seven roles (D14). Gone: vessels, batches and their graph, press runs,
+  kegs, tax classes, TTB, the tank view, product approvals.
+- **Provisioning:** `deploy/os-provision.sh` and `deploy/provision-client.sh` apply the profile (`PROCESS_PROFILE`
+  from the environment, then `config/.env`, else `steel`), recorded as `profile:<name>`; the pre-adoption heuristic
+  the cidery needed is gone.
+- **Proof** (`scripts/prove-schema.sh`, 283 checks, all green): the database dropped and rebuilt from empty by the
+  provisioning script with the profile; 90+ tables, 16 views and 15 functions present and no cider table; the seeds
+  (units, classes, 24 attributes, 7 operations, 14 measurement types, 13 equipment kinds, 16 reason codes, the gauge
+  tables, 18 sequences, 21 report lines, the roles); the helpers (numbering, theoretical weight, rack sort); then the
+  worked example of the plan's §5 through every table — receipt with ticket and MTR, interlocks, product and spec,
+  capabilities, the run with inheritance and lineage, readings graded, costs, the scrap sale, trace, packaging,
+  release and FIFO, the order with its price basis, the shipment, standing orders and demand, a period report, the
+  activity log — and the read roles' grants. `scripts/dev-owner.sh` recreates the dev owner and MCP tokens after a
+  rebuild.
+- **Known and intended:** the PHP, the MCP servers and the manifest still name the cidery's tables, so the shell does
+  not run against this schema until step 3 (the cut) and step 4 (runs). `scripts/prove-rename.sh` is therefore red on
+  its HTTP section until step 3; nothing of step 1 regressed.

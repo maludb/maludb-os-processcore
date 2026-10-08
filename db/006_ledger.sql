@@ -1,34 +1,31 @@
--- 006_ledger.sql — the inventory ledger, balances, interlocks, transfers,
--- adjustments, counts. Slice 3, but the ledger is posted to from slice 2 on.
+-- 006_ledger.sql — the inventory ledger, balances, interlocks, transfers, adjustments, counts. Every movement is one
+-- signed row against (item, lot, location) in the item's base unit, with its weight beside it (D4). The ledger is
+-- posted to from receiving on. No tax state here: the cidery's bonded/tax-paid interlock was the beverage's.
 SET search_path = app, public;
 
--- Every movement is one signed row against (item, lot, location). A logical
--- event (transfer, consumption, packaging) writes several rows sharing group_id.
 CREATE TABLE app.inventory_transactions (
     id                bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     group_id          uuid NOT NULL DEFAULT gen_random_uuid(),
     txn_type          text NOT NULL CHECK (txn_type IN (
                           'receipt','issue','transfer_out','transfer_in','adjustment','count_correction',
-                          'production_output','packaging_output','removal','return','destruction','reversal')),
+                          'production_output','packaging_output','shipment','return','scrap_out','reversal')),
     item_id           bigint NOT NULL REFERENCES app.items(id),
     lot_id            bigint NOT NULL REFERENCES app.lots(id),
     location_id       bigint NOT NULL REFERENCES app.locations(id),
-    premises_id       bigint NOT NULL REFERENCES app.premises(id),
+    site_id           bigint NOT NULL REFERENCES app.sites(id),
     qty_base          numeric(18,4) NOT NULL CHECK (qty_base <> 0),
+    weight_kg         numeric(14,3) NOT NULL DEFAULT 0,             -- signed like qty; from the lot's unit weight when not given
     unit_cost_base    numeric(18,6) NOT NULL DEFAULT 0,
-    tax_state         text NOT NULL CHECK (tax_state IN ('bonded','tax_paid')),   -- of location_id at posting
     counterparty_kind text NOT NULL DEFAULT 'none' CHECK (counterparty_kind IN (
-                          'none','location','batch','press_run','packaging_run','supplier','customer','disposal')),
+                          'none','location','run','packaging_run','supplier','customer','disposal')),
     counterparty_id   bigint,
     reason_code_id    bigint REFERENCES app.reason_codes(id),
-    ttb_category      text NOT NULL DEFAULT 'none' CHECK (ttb_category IN (
-                          'none','received','produced','used_in_production','bottled','removed_tax_paid',
-                          'removed_in_bond','export','testing','destroyed','breakage','inventory_loss',
-                          'casualty_loss','shortage','inventory_gain','returned')),
+    report_category   text NOT NULL DEFAULT 'none' CHECK (report_category IN (
+                          'none','received','produced','consumed','packaged','shipped','returned','scrapped',
+                          'process_loss','exceptional_loss','damage','destroyed','shortage','gain','correction')),
     reference_kind    text NOT NULL CHECK (reference_kind IN (
-                          'goods_receipt','transfer','adjustment','count','press_run','batch_consumption',
-                          'batch_output','packaging_run','removal','return','loss_event','co_product_disposition',
-                          'yeast_harvest','reversal','opening')),
+                          'goods_receipt','transfer','adjustment','count','run_input','run_output','run_consumable',
+                          'packaging_run','shipment','return','loss_event','co_product_disposition','reversal','opening')),
     reference_id      bigint NOT NULL,
     reverses_id       bigint REFERENCES app.inventory_transactions(id),
     idempotency_key   text NOT NULL UNIQUE,
@@ -42,18 +39,19 @@ CREATE INDEX inventory_transactions_item_idx     ON app.inventory_transactions (
 CREATE INDEX inventory_transactions_location_idx ON app.inventory_transactions (location_id, occurred_at);
 CREATE INDEX inventory_transactions_ref_idx      ON app.inventory_transactions (reference_kind, reference_id);
 CREATE INDEX inventory_transactions_group_idx    ON app.inventory_transactions (group_id);
-CREATE INDEX inventory_transactions_period_idx   ON app.inventory_transactions (premises_id, occurred_at, ttb_category);
+CREATE INDEX inventory_transactions_period_idx   ON app.inventory_transactions (site_id, occurred_at, report_category);
 CREATE TRIGGER inventory_transactions_immutable BEFORE UPDATE OR DELETE ON app.inventory_transactions
     FOR EACH ROW EXECUTE FUNCTION app.forbid_change();
 
 -- Materialized balances, maintained by trigger, recomputable --------------------------
 CREATE TABLE app.inventory_balances (
-    item_id       bigint NOT NULL REFERENCES app.items(id),
-    lot_id        bigint NOT NULL REFERENCES app.lots(id),
-    location_id   bigint NOT NULL REFERENCES app.locations(id),
-    qty_on_hand   numeric(18,4) NOT NULL DEFAULT 0,
-    qty_allocated numeric(18,4) NOT NULL DEFAULT 0,
-    updated_at    timestamptz NOT NULL DEFAULT now(),
+    item_id          bigint NOT NULL REFERENCES app.items(id),
+    lot_id           bigint NOT NULL REFERENCES app.lots(id),
+    location_id      bigint NOT NULL REFERENCES app.locations(id),
+    qty_on_hand      numeric(18,4) NOT NULL DEFAULT 0,
+    weight_on_hand_kg numeric(14,3) NOT NULL DEFAULT 0,
+    qty_allocated    numeric(18,4) NOT NULL DEFAULT 0,
+    updated_at       timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (item_id, lot_id, location_id)
 );
 CREATE INDEX inventory_balances_location_idx ON app.inventory_balances (location_id) WHERE qty_on_hand <> 0;
@@ -61,9 +59,9 @@ CREATE INDEX inventory_balances_location_idx ON app.inventory_balances (location
 CREATE OR REPLACE FUNCTION app.ledger_before_insert() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
-    v_lot       app.lots%ROWTYPE;
-    v_loc       app.locations%ROWTYPE;
-    v_on_hand   numeric(18,4);
+    v_lot     app.lots%ROWTYPE;
+    v_loc     app.locations%ROWTYPE;
+    v_on_hand numeric(18,4);
 BEGIN
     SELECT * INTO v_lot FROM app.lots WHERE id = NEW.lot_id;
     SELECT * INTO v_loc FROM app.locations WHERE id = NEW.location_id;
@@ -72,15 +70,17 @@ BEGIN
         RAISE EXCEPTION 'lot % belongs to item %, not %', v_lot.lot_number, v_lot.item_id, NEW.item_id;
     END IF;
 
-    -- Snapshot the tax state and premises from the location.
-    NEW.tax_state   := v_loc.tax_state;
-    NEW.premises_id := v_loc.premises_id;
+    -- Snapshot the site from the location; derive the weight from the lot when not given.
+    NEW.site_id := v_loc.site_id;
+    IF NEW.weight_kg = 0 AND v_lot.unit_weight_kg IS NOT NULL THEN
+        NEW.weight_kg := round(NEW.qty_base * v_lot.unit_weight_kg, 3);
+    END IF;
 
-    -- Interlock 1: nothing leaves a lot that is not released, except a
-    -- destruction/adjustment/reversal/transfer (moving a quarantined pallet is fine).
+    -- Interlock 1: nothing leaves a lot that is not released, except a destruction/adjustment/reversal/transfer
+    -- (moving a quarantined coil to another bay is fine).
     IF NEW.qty_base < 0 AND v_lot.quality_status <> 'released'
-       AND NEW.txn_type IN ('issue','packaging_output','removal') THEN
-        RAISE EXCEPTION 'lot % is % and cannot be used or removed', v_lot.lot_number, v_lot.quality_status
+       AND NEW.txn_type IN ('issue','packaging_output','shipment') THEN
+        RAISE EXCEPTION 'lot % is % and cannot be used or shipped', v_lot.lot_number, v_lot.quality_status
             USING ERRCODE = 'check_violation';
     END IF;
 
@@ -99,10 +99,12 @@ END $$;
 CREATE OR REPLACE FUNCTION app.ledger_after_insert() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
-    INSERT INTO app.inventory_balances (item_id, lot_id, location_id, qty_on_hand, updated_at)
-    VALUES (NEW.item_id, NEW.lot_id, NEW.location_id, NEW.qty_base, now())
+    INSERT INTO app.inventory_balances (item_id, lot_id, location_id, qty_on_hand, weight_on_hand_kg, updated_at)
+    VALUES (NEW.item_id, NEW.lot_id, NEW.location_id, NEW.qty_base, NEW.weight_kg, now())
     ON CONFLICT (item_id, lot_id, location_id)
-    DO UPDATE SET qty_on_hand = app.inventory_balances.qty_on_hand + EXCLUDED.qty_on_hand, updated_at = now();
+    DO UPDATE SET qty_on_hand = app.inventory_balances.qty_on_hand + EXCLUDED.qty_on_hand,
+                  weight_on_hand_kg = app.inventory_balances.weight_on_hand_kg + EXCLUDED.weight_on_hand_kg,
+                  updated_at = now();
     RETURN NULL;
 END $$;
 
@@ -111,31 +113,14 @@ CREATE TRIGGER inventory_transactions_before BEFORE INSERT ON app.inventory_tran
 CREATE TRIGGER inventory_transactions_after AFTER INSERT ON app.inventory_transactions
     FOR EACH ROW EXECUTE FUNCTION app.ledger_after_insert();
 
--- Interlock 3: a transfer between locations of different tax state must be a
--- removal or return, never a plain transfer. Checked on the group after insert.
-CREATE OR REPLACE FUNCTION app.ledger_check_tax_state_group() RETURNS trigger
-LANGUAGE plpgsql AS $$
-DECLARE n int;
-BEGIN
-    SELECT count(DISTINCT tax_state) INTO n
-      FROM app.inventory_transactions WHERE group_id = NEW.group_id;
-    IF n > 1 AND NEW.reference_kind NOT IN ('removal','return') THEN
-        RAISE EXCEPTION 'a % cannot move stock between bonded and tax-paid locations; record a removal or return',
-            NEW.reference_kind USING ERRCODE = 'check_violation';
-    END IF;
-    RETURN NULL;
-END $$;
-CREATE TRIGGER inventory_transactions_tax_state AFTER INSERT ON app.inventory_transactions
-    FOR EACH ROW EXECUTE FUNCTION app.ledger_check_tax_state_group();
-
 CREATE OR REPLACE FUNCTION app.rebuild_inventory_balances() RETURNS void
 LANGUAGE sql AS $$
-    UPDATE app.inventory_balances SET qty_on_hand = 0;
-    INSERT INTO app.inventory_balances (item_id, lot_id, location_id, qty_on_hand, updated_at)
-    SELECT item_id, lot_id, location_id, sum(qty_base), now()
+    UPDATE app.inventory_balances SET qty_on_hand = 0, weight_on_hand_kg = 0;
+    INSERT INTO app.inventory_balances (item_id, lot_id, location_id, qty_on_hand, weight_on_hand_kg, updated_at)
+    SELECT item_id, lot_id, location_id, sum(qty_base), sum(weight_kg), now()
       FROM app.inventory_transactions GROUP BY 1,2,3
     ON CONFLICT (item_id, lot_id, location_id)
-    DO UPDATE SET qty_on_hand = EXCLUDED.qty_on_hand, updated_at = now();
+    DO UPDATE SET qty_on_hand = EXCLUDED.qty_on_hand, weight_on_hand_kg = EXCLUDED.weight_on_hand_kg, updated_at = now();
 $$;
 
 -- Documents the screens work with --------------------------------------------------
@@ -188,6 +173,7 @@ CREATE TABLE app.inventory_adjustment_lines (
     item_id        bigint NOT NULL REFERENCES app.items(id),
     lot_id         bigint NOT NULL REFERENCES app.lots(id),
     qty_delta_base numeric(18,4) NOT NULL CHECK (qty_delta_base <> 0),
+    weight_delta_kg numeric(14,3),
     unit_cost_base numeric(18,6),
     note           text
 );
@@ -216,6 +202,7 @@ CREATE TABLE app.inventory_count_lines (
     lot_id            bigint NOT NULL REFERENCES app.lots(id),
     qty_expected_base numeric(18,4) NOT NULL,
     qty_counted_base  numeric(18,4),
+    weight_counted_kg numeric(14,3),
     variance_base     numeric(18,4) GENERATED ALWAYS AS (qty_counted_base - qty_expected_base) STORED,
     counted_by        bigint REFERENCES app.users(id),
     counted_at        timestamptz,

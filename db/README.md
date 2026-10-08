@@ -1,35 +1,37 @@
-# Database files
+# The database
 
-One PostgreSQL 17 database per client (SaaS Plus+), two schemas inside it:
+One PostgreSQL 17 database per business, two schemas, three roles (`db/000_roles.sql`):
 
 | Schema | Holds | Owner | Readers |
 |---|---|---|---|
-| `app` | Record memory: every table in 002 to 013 | `processcore_app` | `processcore_records_ro` (MCP records server) |
+| `app` | Record memory: every table in 002 to 016 | `processcore_app` | `processcore_records_ro` (MCP records server) |
 | `memory` | Activity memory: the MaluDB facade (`maludb_core.enable_memory_schema`) | `processcore_app` | `processcore_activity_ro` (MCP activity server) |
 
-An operator registry database `processcore_host` (see `host/000_host.sql`) lists the clients and holds no client data.
+The files, in order (written in place for ProcessCore on 2026-10-08, docs/processcore-design.md D2):
 
-## Run order
+| File | What |
+|---|---|
+| `000_roles.sql` | the three cluster roles (superuser, once per cluster) |
+| `001_extensions.sql` | `maludb_core` and the two schemas (superuser, per database) |
+| `002_common.sql` | helpers, number sequences, reference tables, theoretical weight |
+| `003_auth.sql` | users (seven roles), identities, 2FA, throttling, MCP tokens |
+| `004_foundation.sql` | the business, sites, units, item classes with lot nouns, the attribute dictionary, items, suppliers, locations and racks, reason codes, equipment kinds and equipment with capabilities, attachments |
+| `005_purchasing_receiving.sql` | purchase orders, receipts, lots with weight, lot attributes and `lot_attributes_fill()`, weigh tickets, certificates, release decisions |
+| `006_ledger.sql` | the inventory ledger with weight, balances, the two interlocks, transfers, adjustments, counts |
+| `007_products_process_specs.sql` | operations, measurement types, products with attributes, process specs (steps, inputs), specs, packaging configurations, standard costs, overhead rates |
+| `008_production.sql` | production orders, allocations, runs (inputs, outputs, consumables), consumptions, lot lineage, losses, readings, co-product dispositions |
+| `009_packaging.sql` | packaging runs (inputs, materials) and finished lots |
+| `010_quality.sql` | inspections, the spec evaluation of readings |
+| `011_shipping_reports.sql` | customers, shipments and lines, the report line map, period reports |
+| `012_views.sql` | stock, yield, cost and valuation views; `trace_forward`, `trace_backward`, `heat_where_used` |
+| `013_activity_log.sql` | the activity log and its MaluDB ingestion |
+| `014_customer_orders.sql` | customer orders with the price basis, standing orders, imports, forecasts, demand |
+| `015_equipment_schedule.sql` | equipment reservations, the schedule, clashes, `equipment_fits()` |
+| `016_os_adoption.sql` | the Business OS kernel's link, sign-on tables, roles and rights |
+| `020_grants.sql` | the read roles' grants (superuser, last, after every file) |
+| `profiles/<name>/seed.sql` | an industry's seed data (`steel` the default): classes, attributes, operations, measurements, equipment kinds, reason codes, reference tables, number formats, display units |
 
-`deploy/provision-client.sh <slug> "<name>" <owner email>` does all of this for a new client:
-
-1. `000_roles.sql` once per cluster (superuser, idempotent).
-2. `createdb processcore_<slug>` owned by `processcore_app`, then `001_extensions.sql` (superuser: installs `maludb_core`, creates the schemas).
-3. `SELECT maludb_core.enable_memory_schema('memory')` as `processcore_app`.
-4. `002_common.sql` through the highest numbered file (`015_...` today) in numeric order as `processcore_app`.
-5. `020_grants.sql` (superuser).
-6. Seed `app.client_settings` and mark the client active in `processcore_host`.
-
-## Conventions
-
-- Primary keys are `bigint GENERATED ALWAYS AS IDENTITY`; every mutable table has `created_at` and `updated_at` (trigger `app.touch_updated_at`).
-- Quantities are stored in base units (`L`, `kg`, `ea`) as `numeric`; display conversion happens in PHP from `app.units`, `app.item_units` and `app.client_settings`.
-- `app.inventory_transactions` and `app.activity_log` are immutable (trigger `app.forbid_change`); corrections are compensating rows.
-- Ledger interlocks live in `app.ledger_before_insert` (quarantine, negative stock) and `app.ledger_check_tax_state_group` (bonded to tax-paid moves only through removals and returns).
-- Document numbers come from `app.next_number('<key>')` (keys in `002_common.sql`).
-- Reporting derivations are views in `012_costing_views.sql`; the TTB line mapping is data in `app.ttb_line_map`.
-- Activity rows reach MaluDB through `app.activity_ingest_pending()`, run every minute by `deploy/processcore-activity-ingest.timer`.
-
-## Changing the schema after Phase 1
-
-Schema changes during Phase 3 are exceptional and need owner sign-off. Add a new numbered file (`016_...sql`) rather than editing an applied one, and record it in `clients.schema_version`.
+Provisioning: `deploy/os-provision.sh` (beside the kernel, idempotent, records each file and the profile in
+`app.schema_migrations`) or `deploy/provision-client.sh` (standalone, one client at a time). A change after the first
+install is a new numbered file; a profile is only ever appended to. Activity rows reach MaluDB through
+`app.activity_ingest_pending()`, run every minute by `deploy/processcore-activity-ingest.timer`.

@@ -1,17 +1,19 @@
--- 008_production.sql — production orders, allocations, vessels in use, press
--- runs, batches and the batch graph, consumptions, transfers, splits, blends,
--- losses, readings, yeast harvests, co-product disposition. Slices 5 and 6.
+-- 008_production.sql — production orders, allocations, RUNS (the unit of execution, D3: lots in, lots out, scrap,
+-- readings, yield, lineage), consumptions, lot lineage, losses, readings, co-product dispositions. The exemplar slice.
 SET search_path = app, public;
 
 CREATE TABLE app.production_orders (
     id                  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     number              text NOT NULL UNIQUE,
-    premises_id         bigint NOT NULL REFERENCES app.premises(id),
+    site_id             bigint NOT NULL REFERENCES app.sites(id),
     product_id          bigint NOT NULL REFERENCES app.products(id),
-    recipe_version_id   bigint NOT NULL REFERENCES app.recipe_versions(id),
-    planned_volume_l    numeric(14,3) NOT NULL CHECK (planned_volume_l > 0),
-    planned_pitch_on    date,
-    planned_package_on  date,
+    process_spec_id     bigint NOT NULL REFERENCES app.process_specs(id),
+    planned_qty_base    numeric(18,4) NOT NULL CHECK (planned_qty_base > 0),   -- in the spec's output item unit
+    planned_weight_kg   numeric(14,3),
+    planned_start_on    date,
+    planned_finish_on   date,
+    due_on              date,
+    priority            smallint NOT NULL DEFAULT 3 CHECK (priority BETWEEN 1 AND 5),  -- 1 = first
     status              text NOT NULL DEFAULT 'planned' CHECK (status IN ('planned','released','in_progress','complete','closed','cancelled')),
     notes               text,
     created_by          bigint REFERENCES app.users(id),
@@ -22,20 +24,8 @@ CREATE TABLE app.production_orders (
     created_at          timestamptz NOT NULL DEFAULT now(),
     updated_at          timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX production_orders_status_idx ON app.production_orders (status, planned_pitch_on);
+CREATE INDEX production_orders_status_idx ON app.production_orders (status, due_on);
 CREATE TRIGGER production_orders_touch BEFORE UPDATE ON app.production_orders FOR EACH ROW EXECUTE FUNCTION app.touch_updated_at();
-
--- Planned vessel use; overlaps warn in the UI, never block.
-CREATE TABLE app.production_order_vessels (
-    id                  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    production_order_id bigint NOT NULL REFERENCES app.production_orders(id) ON DELETE CASCADE,
-    vessel_id           bigint NOT NULL REFERENCES app.vessels(id),
-    role                text NOT NULL DEFAULT 'primary' CHECK (role IN ('primary','maturation','brite','blend')),
-    planned_from        date NOT NULL,
-    planned_to          date NOT NULL,
-    CHECK (planned_to >= planned_from)
-);
-CREATE INDEX production_order_vessels_vessel_idx ON app.production_order_vessels (vessel_id, planned_from, planned_to);
 
 CREATE TABLE app.allocations (
     id                  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -48,195 +38,134 @@ CREATE TABLE app.allocations (
 );
 CREATE INDEX allocations_open_idx ON app.allocations (item_id, lot_id) WHERE released_at IS NULL;
 
--- Batches --------------------------------------------------------------------------------
-CREATE TABLE app.batches (
-    id                       bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    number                   text NOT NULL UNIQUE,
-    premises_id              bigint NOT NULL REFERENCES app.premises(id),
-    product_id               bigint NOT NULL REFERENCES app.products(id),
-    recipe_version_id        bigint REFERENCES app.recipe_versions(id),
-    production_order_id      bigint REFERENCES app.production_orders(id),
-    origin_kind              text NOT NULL DEFAULT 'pitch' CHECK (origin_kind IN ('pitch','split','blend')),
-    started_at               timestamptz NOT NULL DEFAULT now(),
-    current_stage_code       text NOT NULL DEFAULT 'pitch' REFERENCES app.stages(code),
-    status                   text NOT NULL DEFAULT 'active' CHECK (status IN ('active','packaged','dumped','closed')),
-    current_volume_l         numeric(14,3) NOT NULL DEFAULT 0,  -- maintained by execution handlers
-    fruit_share_pct          numeric(5,2),                      -- derived through blends
-    tax_class_derived        text,
-    tax_class_override       text,
-    tax_class_override_reason_code_id bigint REFERENCES app.reason_codes(id),
-    tax_class_override_by    bigint REFERENCES app.users(id),
-    tax_class_override_at    timestamptz,
-    notes                    text,
-    closed_at                timestamptz,
-    created_by               bigint REFERENCES app.users(id),
-    created_at               timestamptz NOT NULL DEFAULT now(),
-    updated_at               timestamptz NOT NULL DEFAULT now()
+-- Runs: one operation, on one machine, in one sitting ------------------------------------------
+CREATE TABLE app.runs (
+    id                   bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    number               text NOT NULL UNIQUE,
+    site_id              bigint NOT NULL REFERENCES app.sites(id),
+    production_order_id  bigint REFERENCES app.production_orders(id),          -- NULL = stock processing
+    process_spec_step_id bigint REFERENCES app.process_spec_steps(id),
+    operation_code       text NOT NULL REFERENCES app.operations(code) ON UPDATE CASCADE,
+    equipment_id         bigint REFERENCES app.equipment(id),
+    status               text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','in_progress','posted','cancelled')),
+    run_on               date NOT NULL DEFAULT current_date,
+    started_at           timestamptz,
+    finished_at          timestamptz,
+    setup_minutes        int,
+    run_minutes          int,
+    input_qty_base       numeric(18,4),                                       -- totals, written at post
+    input_weight_kg      numeric(14,3),
+    output_qty_base      numeric(18,4),                                       -- product outputs only
+    output_weight_kg     numeric(14,3),
+    co_product_weight_kg numeric(14,3),
+    scrap_weight_kg      numeric(14,3),
+    loss_weight_kg       numeric(14,3),                                       -- input − outputs − co-products − scrap
+    yield_pct            numeric(6,2),                                        -- output weight / input weight
+    notes                text,
+    created_by           bigint REFERENCES app.users(id),
+    posted_by            bigint REFERENCES app.users(id),
+    posted_at            timestamptz,
+    cancelled_by         bigint REFERENCES app.users(id),
+    cancelled_at         timestamptz,
+    created_at           timestamptz NOT NULL DEFAULT now(),
+    updated_at           timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX batches_status_idx ON app.batches (status, current_stage_code);
-CREATE TRIGGER batches_touch BEFORE UPDATE ON app.batches FOR EACH ROW EXECUTE FUNCTION app.touch_updated_at();
+CREATE INDEX runs_status_idx ON app.runs (status, run_on);
+CREATE INDEX runs_order_idx ON app.runs (production_order_id) WHERE production_order_id IS NOT NULL;
+CREATE INDEX runs_equipment_idx ON app.runs (equipment_id, run_on) WHERE equipment_id IS NOT NULL;
+CREATE TRIGGER runs_touch BEFORE UPDATE ON app.runs FOR EACH ROW EXECUTE FUNCTION app.touch_updated_at();
 
--- Explicit genealogy links, written by split and blend handlers.
-CREATE TABLE app.batch_lineage (
-    id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    child_batch_id  bigint NOT NULL REFERENCES app.batches(id),
-    parent_batch_id bigint NOT NULL REFERENCES app.batches(id),
-    event_kind      text NOT NULL CHECK (event_kind IN ('split','blend')),
-    event_id        bigint NOT NULL,
-    volume_l        numeric(14,3) NOT NULL CHECK (volume_l > 0),
-    fraction        numeric(8,6) NOT NULL CHECK (fraction > 0 AND fraction <= 1),
-    created_at      timestamptz NOT NULL DEFAULT now(),
-    CHECK (child_batch_id <> parent_batch_id)
+-- Inputs: the lots a run takes. The primary input is the one whose inheritable attributes (heat, grade) flow to the outputs.
+CREATE TABLE app.run_inputs (
+    id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    run_id     bigint NOT NULL REFERENCES app.runs(id) ON DELETE CASCADE,
+    seq        int NOT NULL,
+    lot_id     bigint NOT NULL REFERENCES app.lots(id),
+    qty_base   numeric(18,4) NOT NULL CHECK (qty_base > 0),
+    weight_kg  numeric(14,3),
+    is_primary boolean NOT NULL DEFAULT false,
+    note       text,
+    UNIQUE (run_id, seq)
 );
-CREATE INDEX batch_lineage_child_idx  ON app.batch_lineage (child_batch_id);
-CREATE INDEX batch_lineage_parent_idx ON app.batch_lineage (parent_batch_id);
+CREATE UNIQUE INDEX run_inputs_one_primary ON app.run_inputs (run_id) WHERE is_primary;
+CREATE INDEX run_inputs_lot_idx ON app.run_inputs (lot_id);
 
--- Press runs: fruit lots in, juice lots and pomace out ----------------------------------
-CREATE TABLE app.press_runs (
-    id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    number          text NOT NULL UNIQUE,
-    premises_id     bigint NOT NULL REFERENCES app.premises(id),
-    press_vessel_id bigint REFERENCES app.vessels(id),
-    run_on          date NOT NULL DEFAULT current_date,
-    started_at      timestamptz,
-    finished_at     timestamptz,
-    status          text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','posted','cancelled')),
-    fruit_kg_total  numeric(14,3),
-    juice_l_total   numeric(14,3),
-    pomace_kg_total numeric(14,3),
-    yield_l_per_kg  numeric(10,6),
-    notes           text,
-    created_by      bigint REFERENCES app.users(id),
-    posted_by       bigint REFERENCES app.users(id),
-    posted_at       timestamptz,
-    created_at      timestamptz NOT NULL DEFAULT now(),
-    updated_at      timestamptz NOT NULL DEFAULT now()
+-- Outputs: the lots a run makes. kind product = what the step yields; co_product (a remnant coil, a usable offcut);
+-- scrap (sold by weight); rework (held). The lot is created at post; attributes are explicit values for the new lot
+-- on top of the output item's and the primary input's inheritable ones (app.lot_attributes_fill).
+CREATE TABLE app.run_outputs (
+    id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    run_id      bigint NOT NULL REFERENCES app.runs(id) ON DELETE CASCADE,
+    seq         int NOT NULL,
+    kind        text NOT NULL DEFAULT 'product' CHECK (kind IN ('product','co_product','scrap','rework')),
+    item_id     bigint NOT NULL REFERENCES app.items(id),
+    lot_id      bigint REFERENCES app.lots(id),               -- created at post
+    qty_base    numeric(18,4) NOT NULL CHECK (qty_base > 0),
+    weight_kg   numeric(14,3),
+    location_id bigint NOT NULL REFERENCES app.locations(id),
+    lot_number  text,                                         -- a chosen number; NULL = the class's sequence
+    attributes  jsonb NOT NULL DEFAULT '{}'::jsonb,
+    note        text,
+    UNIQUE (run_id, seq)
 );
-CREATE TRIGGER press_runs_touch BEFORE UPDATE ON app.press_runs FOR EACH ROW EXECUTE FUNCTION app.touch_updated_at();
+CREATE INDEX run_outputs_lot_idx ON app.run_outputs (lot_id) WHERE lot_id IS NOT NULL;
 
-CREATE TABLE app.press_run_inputs (
-    id           bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    press_run_id bigint NOT NULL REFERENCES app.press_runs(id) ON DELETE CASCADE,
-    lot_id       bigint NOT NULL REFERENCES app.lots(id),     -- fruit lot
-    qty_kg       numeric(14,3) NOT NULL CHECK (qty_kg > 0)
-);
-
-CREATE TABLE app.press_run_outputs (
-    id           bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    press_run_id bigint NOT NULL REFERENCES app.press_runs(id) ON DELETE CASCADE,
-    kind         text NOT NULL CHECK (kind IN ('juice','pomace')),
-    item_id      bigint NOT NULL REFERENCES app.items(id),
-    lot_id       bigint REFERENCES app.lots(id),              -- created at post
-    qty_base     numeric(14,3) NOT NULL CHECK (qty_base > 0), -- L for juice, kg for pomace
-    brix         numeric(6,2),
-    vessel_id    bigint REFERENCES app.vessels(id),           -- juice goes into a vessel
-    location_id  bigint REFERENCES app.locations(id)          -- pomace goes to a location
+-- Consumables: knives, oil, banding, paper — explicit lots or backflushed at post.
+CREATE TABLE app.run_consumables (
+    id        bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    run_id    bigint NOT NULL REFERENCES app.runs(id) ON DELETE CASCADE,
+    item_id   bigint NOT NULL REFERENCES app.items(id),
+    lot_id    bigint REFERENCES app.lots(id),                 -- NULL until posted for backflush
+    qty_base  numeric(18,4) NOT NULL CHECK (qty_base > 0),
+    mode      text NOT NULL DEFAULT 'explicit' CHECK (mode IN ('explicit','backflush'))
 );
 
--- Vessel occupancy: one occupant per vessel at a time -------------------------------
-CREATE TABLE app.vessel_occupancies (
-    id            bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    vessel_id     bigint NOT NULL REFERENCES app.vessels(id),
-    occupant_kind text NOT NULL CHECK (occupant_kind IN ('lot','batch')),
-    occupant_id   bigint NOT NULL,
-    volume_l      numeric(14,3) NOT NULL CHECK (volume_l >= 0),
-    from_at       timestamptz NOT NULL DEFAULT now(),
-    to_at         timestamptz,
-    CHECK (to_at IS NULL OR to_at >= from_at)
-);
-CREATE UNIQUE INDEX vessel_occupancies_one_open ON app.vessel_occupancies (vessel_id) WHERE to_at IS NULL;
-CREATE INDEX vessel_occupancies_occupant_idx ON app.vessel_occupancies (occupant_kind, occupant_id) WHERE to_at IS NULL;
-
--- Stage events -----------------------------------------------------------------------
-CREATE TABLE app.stage_events (
-    id           bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    batch_id     bigint NOT NULL REFERENCES app.batches(id),
-    stage_code   text NOT NULL REFERENCES app.stages(code),
-    entered_at   timestamptz NOT NULL DEFAULT now(),
-    left_at      timestamptz,
-    volume_in_l  numeric(14,3),
-    volume_out_l numeric(14,3),
-    actor_id     bigint REFERENCES app.users(id),
-    note         text
-);
-CREATE INDEX stage_events_batch_idx ON app.stage_events (batch_id, entered_at);
-
--- Consumptions: an item lot used by a batch or a press run ----------------------------
+-- Consumptions: the ledger side of inputs and consumables, written at post ----------------------
 CREATE TABLE app.consumptions (
     id               bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    batch_id         bigint REFERENCES app.batches(id),
-    press_run_id     bigint REFERENCES app.press_runs(id),
+    run_id           bigint NOT NULL REFERENCES app.runs(id),
     item_id          bigint NOT NULL REFERENCES app.items(id),
     lot_id           bigint NOT NULL REFERENCES app.lots(id),
     qty_base         numeric(18,4) NOT NULL CHECK (qty_base > 0),
-    purpose          text NOT NULL CHECK (purpose IN ('base_juice','yeast','nutrient','sulfite','enzyme','sweetener','acid','fining','fruit','other')),
-    stage_code       text REFERENCES app.stages(code),
+    weight_kg        numeric(14,3),
+    purpose          text NOT NULL CHECK (purpose IN ('primary_material','material','consumable','packaging','other')),
+    operation_code   text REFERENCES app.operations(code) ON UPDATE CASCADE,
     planned_qty_base numeric(18,4),
     consumed_at      timestamptz NOT NULL DEFAULT now(),
     actor_id         bigint REFERENCES app.users(id),
     ledger_group_id  uuid,
-    note             text,
-    CHECK ((batch_id IS NOT NULL) <> (press_run_id IS NOT NULL))
+    note             text
 );
-CREATE INDEX consumptions_batch_idx ON app.consumptions (batch_id);
-CREATE INDEX consumptions_lot_idx   ON app.consumptions (lot_id);
+CREATE INDEX consumptions_run_idx ON app.consumptions (run_id);
+CREATE INDEX consumptions_lot_idx ON app.consumptions (lot_id);
 
-CREATE TABLE app.batch_transfers (
-    id             bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    batch_id       bigint NOT NULL REFERENCES app.batches(id),
-    from_vessel_id bigint NOT NULL REFERENCES app.vessels(id),
-    to_vessel_id   bigint NOT NULL REFERENCES app.vessels(id),
-    volume_l       numeric(14,3) NOT NULL CHECK (volume_l > 0),
-    loss_l         numeric(14,3) NOT NULL DEFAULT 0 CHECK (loss_l >= 0),
-    transferred_at timestamptz NOT NULL DEFAULT now(),
-    actor_id       bigint REFERENCES app.users(id),
-    note           text,
-    CHECK (from_vessel_id <> to_vessel_id)
+-- Lineage: which lot came from which, through which event; weight-based fraction for cost and trace -----------
+CREATE TABLE app.lot_lineage (
+    id            bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    child_lot_id  bigint NOT NULL REFERENCES app.lots(id),
+    parent_lot_id bigint NOT NULL REFERENCES app.lots(id),
+    event_kind    text NOT NULL CHECK (event_kind IN ('run','packaging_run','split')),
+    event_id      bigint NOT NULL,
+    weight_kg     numeric(14,3),                              -- of the parent that went into the child
+    fraction      numeric(10,8) CHECK (fraction IS NULL OR (fraction > 0 AND fraction <= 1)),  -- share of the parent's input
+    created_at    timestamptz NOT NULL DEFAULT now(),
+    CHECK (child_lot_id <> parent_lot_id)
 );
+CREATE INDEX lot_lineage_child_idx  ON app.lot_lineage (child_lot_id);
+CREATE INDEX lot_lineage_parent_idx ON app.lot_lineage (parent_lot_id);
 
-CREATE TABLE app.batch_splits (
-    id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    source_batch_id bigint NOT NULL REFERENCES app.batches(id),
-    split_at        timestamptz NOT NULL DEFAULT now(),
-    actor_id        bigint REFERENCES app.users(id),
-    note            text
-);
-CREATE TABLE app.batch_split_outputs (
-    id             bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    split_id       bigint NOT NULL REFERENCES app.batch_splits(id) ON DELETE CASCADE,
-    child_batch_id bigint NOT NULL REFERENCES app.batches(id),
-    vessel_id      bigint NOT NULL REFERENCES app.vessels(id),
-    volume_l       numeric(14,3) NOT NULL CHECK (volume_l > 0)
-);
-
-CREATE TABLE app.batch_blends (
-    id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    result_batch_id bigint NOT NULL REFERENCES app.batches(id),
-    vessel_id       bigint NOT NULL REFERENCES app.vessels(id),
-    volume_out_l    numeric(14,3) NOT NULL CHECK (volume_out_l > 0),
-    blended_at      timestamptz NOT NULL DEFAULT now(),
-    actor_id        bigint REFERENCES app.users(id),
-    note            text
-);
-CREATE TABLE app.batch_blend_inputs (
-    id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    blend_id        bigint NOT NULL REFERENCES app.batch_blends(id) ON DELETE CASCADE,
-    source_batch_id bigint NOT NULL REFERENCES app.batches(id),
-    volume_l        numeric(14,3) NOT NULL CHECK (volume_l > 0)
-);
-
--- Losses: expected (in the recipe) or exceptional (needs a reason, maybe approval)
+-- Losses: expected (in the spec) or exceptional (needs a reason, maybe approval) -----------------
 CREATE TABLE app.loss_events (
     id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    target_kind     text NOT NULL CHECK (target_kind IN ('batch','lot')),
+    target_kind     text NOT NULL CHECK (target_kind IN ('run','lot')),
     target_id       bigint NOT NULL,
-    premises_id     bigint NOT NULL REFERENCES app.premises(id),
-    stage_code      text REFERENCES app.stages(code),
+    site_id         bigint NOT NULL REFERENCES app.sites(id),
+    operation_code  text REFERENCES app.operations(code) ON UPDATE CASCADE,
     qty_base        numeric(18,4) NOT NULL CHECK (qty_base > 0),
-    unit_code       text NOT NULL DEFAULT 'L',
+    unit_code       text NOT NULL DEFAULT 'kg',
+    weight_kg       numeric(14,3),
     reason_code_id  bigint NOT NULL REFERENCES app.reason_codes(id),
-    ttb_category    text NOT NULL,                          -- copied from the reason code at posting
-    reportable      boolean NOT NULL DEFAULT true,
+    report_category text NOT NULL,                            -- copied from the reason code at posting
     classification  text NOT NULL CHECK (classification IN ('expected','exceptional')),
     approved_by     bigint REFERENCES app.users(id),
     approved_at     timestamptz,
@@ -246,19 +175,19 @@ CREATE TABLE app.loss_events (
     note            text
 );
 CREATE INDEX loss_events_target_idx ON app.loss_events (target_kind, target_id);
-CREATE INDEX loss_events_period_idx ON app.loss_events (premises_id, occurred_at);
+CREATE INDEX loss_events_period_idx ON app.loss_events (site_id, occurred_at);
 
--- Readings: one entity for every measurement ---------------------------------------
+-- Readings: one entity for every measurement, on a lot, a run or a machine ----------------------
 CREATE TABLE app.readings (
     id                    bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    target_kind           text NOT NULL CHECK (target_kind IN ('batch','lot','vessel')),
+    target_kind           text NOT NULL CHECK (target_kind IN ('lot','run','equipment')),
     target_id             bigint NOT NULL,
-    measurement_type_code text NOT NULL REFERENCES app.measurement_types(code),
-    value                 numeric(12,4) NOT NULL,
+    measurement_type_code text NOT NULL REFERENCES app.measurement_types(code) ON UPDATE CASCADE,
+    value                 numeric(14,4) NOT NULL,
     taken_at              timestamptz NOT NULL DEFAULT now(),
-    stage_code            text REFERENCES app.stages(code),
+    operation_code        text REFERENCES app.operations(code) ON UPDATE CASCADE,
     method                text,
-    is_lab                boolean NOT NULL DEFAULT false,
+    is_lab                boolean NOT NULL DEFAULT false,      -- from a certificate or a lab, not the floor
     analyst_id            bigint REFERENCES app.users(id),
     spec_id               bigint REFERENCES app.specs(id),
     spec_result           text NOT NULL DEFAULT 'none' CHECK (spec_result IN ('none','pass','fail')),
@@ -268,29 +197,19 @@ CREATE TABLE app.readings (
 );
 CREATE INDEX readings_target_idx ON app.readings (target_kind, target_id, measurement_type_code, taken_at);
 
--- Yeast harvests: a yeast lot with a generation and a source batch ---------------------
-CREATE TABLE app.yeast_harvests (
-    id            bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    source_batch_id bigint NOT NULL REFERENCES app.batches(id),
-    lot_id        bigint NOT NULL UNIQUE REFERENCES app.lots(id),
-    generation    int NOT NULL CHECK (generation >= 1),
-    harvested_at  timestamptz NOT NULL DEFAULT now(),
-    volume_l      numeric(10,3),
-    cell_count    numeric(10,2),
-    viability_pct numeric(5,2),
-    actor_id      bigint REFERENCES app.users(id),
-    note          text
-);
-
--- Pomace and other co-products leaving ----------------------------------------------
+-- Co-products leaving: scrap sold, recycled, discarded, reworked, or returned to stock -------------
 CREATE TABLE app.co_product_dispositions (
     id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     lot_id          bigint NOT NULL REFERENCES app.lots(id),
     qty_base        numeric(18,4) NOT NULL CHECK (qty_base > 0),
-    destination     text NOT NULL CHECK (destination IN ('compost','farm','sale','waste','other')),
+    weight_kg       numeric(14,3),
+    destination     text NOT NULL CHECK (destination IN ('scrap_sale','recycle','waste','rework','return_to_stock','other')),
     recipient       text,
+    customer_id     bigint,                                   -- FK added in 011 after customers exists
+    unit_price      numeric(12,4),                            -- per kg, when sold
     disposed_at     timestamptz NOT NULL DEFAULT now(),
     actor_id        bigint REFERENCES app.users(id),
     ledger_group_id uuid,
     note            text
 );
+CREATE INDEX co_product_dispositions_lot_idx ON app.co_product_dispositions (lot_id);

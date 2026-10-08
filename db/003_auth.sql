@@ -1,5 +1,5 @@
 -- 003_auth.sql — users, identities, 2FA, login throttling, MCP tokens.
--- Shapes follow the php-session-auth skill references exactly.
+-- Shapes follow the php-session-auth skill references exactly. The seven roles of docs/processcore-design.md §8.
 SET search_path = app, public;
 
 CREATE TABLE app.users (
@@ -8,7 +8,7 @@ CREATE TABLE app.users (
     display_name        text NOT NULL,
     password_hash       text,                                -- NULL = Google-only account
     role                text NOT NULL DEFAULT 'viewer'
-                        CHECK (role IN ('owner','production','receiving','quality','compliance','viewer')),
+                        CHECK (role IN ('owner','production','receiving','quality','shipping','sales','viewer')),
     status              text NOT NULL DEFAULT 'invited'
                         CHECK (status IN ('invited','active','disabled')),
     email_verified_at   timestamptz,

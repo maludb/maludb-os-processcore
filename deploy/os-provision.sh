@@ -30,11 +30,6 @@ fi
 
 echo "== application schema (each db/0NN file once, as $RW)"
 $PSQL -c "CREATE TABLE IF NOT EXISTS app.schema_migrations (file text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now()); ALTER TABLE app.schema_migrations OWNER TO $RW;"
-# A database made by the standalone product before this script existed: everything before the adoption is already in.
-if [ "$($PSQL -At -c "select count(*) from app.schema_migrations")" = 0 ] && [ "$($PSQL -At -c "select to_regclass('app.users') is not null")" = t ]; then
-    for f in db/0*.sql; do b=$(basename "$f"); case "$b" in 000_*|001_*|020_*) continue;; esac
-        [ "$b" \< "021_" ] && $PSQL -c "insert into app.schema_migrations (file) values ('$b') on conflict do nothing"; done
-fi
 for f in $(ls db/0*.sql | sort); do
     b=$(basename "$f")
     case "$b" in 000_*|001_*|020_*) continue;; esac
@@ -49,4 +44,15 @@ $PSQL -f db/020_grants.sql
 
 echo "== the business (one row)"
 $PSQL -c "SET ROLE $RW; INSERT INTO app.client_settings (id, client_name, subdomain) VALUES (1, \$\$$NAME\$\$, '$SUB') ON CONFLICT (id) DO NOTHING;"
-echo "== done: $DB_NAME"
+
+# The profile (docs/processcore-design.md D12): PROCESS_PROFILE from the environment, else config/.env, else steel.
+# db/profiles/<name>/seed.sql is applied once as $RW and recorded as profile:<name>; a later apply skips it.
+PROFILE=${PROCESS_PROFILE:-$( { grep -E "^PROCESS_PROFILE=" "$APP_DIR/config/.env" 2>/dev/null || true; } | head -1 | cut -d= -f2 | tr -d "\"' ")}
+PROFILE=${PROFILE:-steel}
+if [ ! -f "db/profiles/$PROFILE/seed.sql" ]; then echo "!! no profile db/profiles/$PROFILE/seed.sql" >&2; exit 2; fi
+if [ "$($PSQL -At -c "select count(*) from app.schema_migrations where file='profile:$PROFILE'")" = 0 ]; then
+    echo "== profile $PROFILE (once)"
+    $PSQL -c "SET ROLE $RW;" -f "db/profiles/$PROFILE/seed.sql"
+    $PSQL -c "insert into app.schema_migrations (file) values ('profile:$PROFILE')"
+fi
+echo "== done: $DB_NAME ($PROFILE)"

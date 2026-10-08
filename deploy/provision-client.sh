@@ -42,5 +42,8 @@ $PSQL -d "$DB" -f "$HERE/db/020_grants.sql"
 
 echo "== seed client settings"
 $PSQL -d "$DB" -c "SET ROLE processcore_app; INSERT INTO app.client_settings (id, client_name, subdomain) VALUES (1, \$\$$NAME\$\$, '$SUBDOMAIN') ON CONFLICT (id) DO NOTHING;"
+PROFILE=${PROCESS_PROFILE:-steel}
+echo "== profile $PROFILE"
+$PSQL -d "$DB" -c "SET ROLE processcore_app;" -f "$HERE/db/profiles/$PROFILE/seed.sql"
 $PSQL -d processcore_host -c "update clients set status='active', provisioned_at=now(), schema_version='020_grants.sql' where slug='$SLUG'"
 echo "== done: $DB"

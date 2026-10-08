@@ -1,7 +1,7 @@
--- 021_os_adoption.sql — ProcessCore beside the MaluDB Business OS kernel (os-adopt, 2026-10-04). Run as processcore_app.
--- The application keeps its users table and links each user to the kernel's member (users.os_member_id);
--- the kernel's roles for a member are a SET (users.os_roles); the sign-on kit's tables sit beside
--- (php-sign-on-kit.md §2); the roles-and-rights catalogue the records MCP publishes as app_roles.
+-- 016_os_adoption.sql — ProcessCore beside the MaluDB Business OS kernel (os-adopt, the cidery's db/021 carried
+-- over). Run as processcore_app. The application keeps its users table and links each user to the kernel's member
+-- (users.os_member_id); the kernel's roles for a member are a SET (users.os_roles); the sign-on kit's tables sit
+-- beside; the roles-and-rights catalogue the records MCP publishes as app_roles (os.app-roles/1).
 SET search_path = app, public;
 
 -- 1. The link, the kernel's roles and capability on this application ---------------------------------
@@ -41,20 +41,14 @@ CREATE TABLE IF NOT EXISTS app.directory_sync_state (    -- the change feed's cu
 );
 INSERT INTO app.directory_sync_state (id) VALUES (1) ON CONFLICT DO NOTHING;
 
-CREATE TABLE IF NOT EXISTS app.activity_ingest_state (   -- the tenant-MaluDB bridge's checkpoint (memory.md §2)
+CREATE TABLE IF NOT EXISTS app.activity_ingest_state (   -- the tenant-MaluDB bridge's checkpoint
     id         smallint PRIMARY KEY DEFAULT 1 CHECK (id = 1),
     last_id    bigint NOT NULL DEFAULT 0,
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 INSERT INTO app.activity_ingest_state (id, last_id) VALUES (1, 0) ON CONFLICT DO NOTHING;
 
--- 3. Activity sources the kernel's contract names (memory.md §2): an agent's action, a timer, an API read.
-ALTER TABLE app.activity_log DROP CONSTRAINT IF EXISTS activity_log_source_check;
-ALTER TABLE app.activity_log ADD CONSTRAINT activity_log_source_check
-    CHECK (source IN ('screen', 'command_bar', 'ama', 'mcp', 'system', 'agent', 'cron', 'api', 'web'));
-ALTER TABLE app.activity_log ADD COLUMN IF NOT EXISTS agent_run_id bigint;   -- the kernel's run id when an agent acted (no FK)
-
--- 4. The roles and rights catalogue (roles-and-rights.md): what the kernel grants, in ProcessCore's words -------
+-- 3. The roles and rights catalogue (roles-and-rights.md): what the kernel grants, in ProcessCore's words -------
 CREATE TABLE IF NOT EXISTS app.app_rights (
     right_key   text PRIMARY KEY CHECK (right_key ~ '^[a-z][a-z0-9_.]{0,59}$'),
     description text NOT NULL,
@@ -76,23 +70,23 @@ CREATE TABLE IF NOT EXISTS app.app_role_rights (
 );
 
 INSERT INTO app.app_rights (right_key, description, sort_order) VALUES
-    ('records.read',     'See every screen and report: inventory, receiving, production, packaging, quality, compliance, customer orders',   10),
-    ('purchasing.write', 'Receiving and purchasing: items, item classes, vendors, purchase orders, receipts, lots, transfers, adjustments, counts', 20),
-    ('production.write', 'Production: products, recipes, vessels, production orders, press runs, batches, packaging runs, kegs',         30),
-    ('quality.write',    'Quality: lab readings, sensory, specifications, releases and dispositions',                                     40),
-    ('compliance.write', 'Compliance: removals, TTB reports, reason codes, standard-cost approvals, finished lots',                       50),
-    ('sales.write',      'Sales: customers, customer orders, standing orders, planning, removals to customers',                           60),
-    ('processcore.admin',     'Run ProcessCore: users, organization settings, AI access tokens — everything',                                  90)
+    ('records.read',     'See every screen and report: inventory, receiving, production, packaging, quality, shipping, customer orders', 10),
+    ('purchasing.write', 'Receiving and purchasing: items, item classes, attributes, vendors, purchase orders, receipts, lots, transfers, adjustments, counts', 20),
+    ('production.write', 'Production: products, process specs, equipment, production orders, runs, packaging runs',                 30),
+    ('quality.write',    'Quality: readings, inspections, specifications, certificates, releases and dispositions',               40),
+    ('shipping.write',   'Shipping: shipments and bills of lading, returns, scrap dispositions, period reports, reason codes',     50),
+    ('sales.write',      'Sales: customers, customer orders, standing orders, planning',                                           60),
+    ('processcore.admin','Run ProcessCore: users, organization settings, AI access tokens — everything',                           90)
 ON CONFLICT (right_key) DO UPDATE SET description = EXCLUDED.description, sort_order = EXCLUDED.sort_order;
 
 INSERT INTO app.app_roles (role_key, name, description, capability, is_admin, sort_order) VALUES
-    ('viewer',     'Viewer',     'Reads everything, changes nothing.',                                           'read',  false, 10),
-    ('receiving',  'Receiving',  'Receives fruit and materials, keeps items, vendors, purchase orders and stock counts.', 'write', false, 20),
-    ('production', 'Production', 'Makes the cider: production orders, press runs, batches, packaging, kegs.',   'write', false, 30),
-    ('quality',    'Quality',    'Lab and sensory readings, specifications, releases.',                            'write', false, 40),
-    ('compliance', 'Compliance', 'Removals, TTB reports, reason codes, approvals.',                                'write', false, 50),
-    ('sales',      'Sales',      'Customers, customer orders, planning.',                                          'write', false, 60),
-    ('owner',      'Owner',      'Runs ProcessCore: everything, plus users, settings and AI access tokens.',       'admin', true,  90)
+    ('viewer',     'Viewer',     'Reads everything, changes nothing.',                                                    'read',  false, 10),
+    ('receiving',  'Receiving',  'Receives material, keeps items, vendors, purchase orders and stock counts.',           'write', false, 20),
+    ('production', 'Production', 'Runs the floor: products, process specs, production orders, runs, packaging.',        'write', false, 30),
+    ('quality',    'Quality',    'Readings, inspections, certificates, specifications, releases.',                       'write', false, 40),
+    ('shipping',   'Shipping',   'Shipments, bills of lading, returns, scrap, period reports.',                          'write', false, 50),
+    ('sales',      'Sales',      'Customers, customer orders, planning.',                                                 'write', false, 60),
+    ('owner',      'Owner',      'Runs ProcessCore: everything, plus users, settings and AI access tokens.',             'admin', true,  90)
 ON CONFLICT (role_key) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description, capability = EXCLUDED.capability,
                                      is_admin = EXCLUDED.is_admin, sort_order = EXCLUDED.sort_order;
 
@@ -101,10 +95,10 @@ INSERT INTO app.app_role_rights (role_key, right_key) VALUES
     ('receiving', 'records.read'), ('receiving', 'purchasing.write'),
     ('production', 'records.read'), ('production', 'production.write'),
     ('quality', 'records.read'), ('quality', 'quality.write'),
-    ('compliance', 'records.read'), ('compliance', 'compliance.write'),
+    ('shipping', 'records.read'), ('shipping', 'shipping.write'),
     ('sales', 'records.read'), ('sales', 'sales.write'),
     ('owner', 'records.read'), ('owner', 'purchasing.write'), ('owner', 'production.write'), ('owner', 'quality.write'),
-    ('owner', 'compliance.write'), ('owner', 'sales.write'), ('owner', 'processcore.admin')
+    ('owner', 'shipping.write'), ('owner', 'sales.write'), ('owner', 'processcore.admin')
 ON CONFLICT DO NOTHING;
 
 -- One read for the records MCP server's app_roles tool (os.app-roles/1).
