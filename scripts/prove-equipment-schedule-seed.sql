@@ -1,4 +1,4 @@
--- Seed for scripts/prove-equipment-schedule.sh, run as cidery_app on the scratch copy BEFORE db/023.
+-- Seed for scripts/prove-equipment-schedule.sh, run as processcore_app on the scratch copy BEFORE db/023.
 -- Three vessels and four production orders whose vessel plans overlap two by two, one cancelled; the plan is
 -- copied aside (app.prove_before) so the migration can be checked row for row.
 SET search_path = app, public;

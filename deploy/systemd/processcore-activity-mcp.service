@@ -1,9 +1,9 @@
-# /etc/systemd/system/cidery-activity-mcp.service
-# The activity-memory MCP server (cidery_activity_mcp) on 127.0.0.1 port 8702. Read-only.
-# Exposed by Apache at /mcp/activity (deploy/apache/cidery-services.conf) behind bearer
+# /etc/systemd/system/processcore-activity-mcp.service
+# The activity-memory MCP server (processcore_activity_mcp) on 127.0.0.1 port 8702. Read-only.
+# Exposed by Apache at /mcp/activity (deploy/apache/processcore-services.conf) behind bearer
 # tokens issued on the AI access tokens screen (scope 'activity').
 [Unit]
-Description=Cidery activity-memory MCP server (cidery_activity_mcp, port 8702)
+Description=ProcessCore activity-memory MCP server (processcore_activity_mcp, port 8702)
 After=network.target postgresql.service
 Wants=postgresql.service
 

@@ -6,7 +6,7 @@ require_once __DIR__ . '/../vessels/queries.php';
 require_once __DIR__ . '/../equipment/queries.php';
 require_once __DIR__ . '/../production-orders/queries.php';
 
-// The Equipment schedule (docs/16-equipment-schedule-design.md §3): resources × days, bookings as bars or chips.
+// The Equipment schedule (docs/cidery/16-equipment-schedule-design.md §3): resources × days, bookings as bars or chips.
 
 const SCHEDULE_WEEKS = [1 => '1 week', 2 => '2 weeks', 4 => '4 weeks', 8 => '8 weeks', 12 => '12 weeks'];
 const SCHEDULE_KINDS = ['vessel' => 'Vessels', 'equipment' => 'Equipment'];

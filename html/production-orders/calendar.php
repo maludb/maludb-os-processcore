@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-// The Vessel calendar became the Equipment schedule (docs/15-equipment-schedule-plan.md D7, 2026-10-08): its URL lives on.
+// The Vessel calendar became the Equipment schedule (docs/cidery/15-equipment-schedule-plan.md D7, 2026-10-08): its URL lives on.
 require_once dirname(__DIR__, 2) . '/app/bootstrap.php';
 require_login();
 $target = '/schedule/?kind=vessel';

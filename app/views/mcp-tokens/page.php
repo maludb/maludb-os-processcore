@@ -25,7 +25,7 @@ $p = 'mcp-token-form';
             <div class="card" id="settings-mcp-tokens-endpoints-card">
                 <div class="card-header"><h5 class="card-title">Connect your own AI tools</h5></div>
                 <div class="card-body">
-                    <p class="text-muted">Claude Desktop, Claude Code and other MCP clients can read the cidery's memory through two read-only servers. Each call needs a token in the <code>Authorization</code> header.</p>
+                    <p class="text-muted">Claude Desktop, Claude Code and other MCP clients can read ProcessCore's memory through two read-only servers. Each call needs a token in the <code>Authorization</code> header.</p>
                     <?= detail_row('settings-mcp-tokens-records-url', 'Records server', '<code id="settings-mcp-tokens-records-url-value" class="text-break">' . e(mcp_token_endpoint($baseUrl, 'records')) . '</code>') ?>
                     <?= detail_row('settings-mcp-tokens-activity-url', 'Activity server', '<code id="settings-mcp-tokens-activity-url-value" class="text-break">' . e(mcp_token_endpoint($baseUrl, 'activity')) . '</code>') ?>
                     <?= detail_row('settings-mcp-tokens-header', 'Header', '<code class="text-break">Authorization: Bearer &lt;token&gt;</code>', true) ?>

@@ -1,4 +1,4 @@
-"""CIDERY_ASSISTANT_FAKE=1: deterministic results with no model call, so the PHP
+"""PROCESSCORE_ASSISTANT_FAKE=1: deterministic results with no model call, so the PHP
 integration (navigation, data action + undo, confirmation, AMA thread) can be
 tested end to end without an API key. Never enable it in production."""
 from __future__ import annotations

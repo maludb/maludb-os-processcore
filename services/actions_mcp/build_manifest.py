@@ -98,7 +98,7 @@ async def check_screens(doc_screens: list[dict[str, Any]], http: bool, user_id: 
     samples = await sample_ids()
     token = mint_token(user_id) if http else None
     out = []
-    async with httpx.AsyncClient(base_url=config.get("CIDERY_APP_BASE_URL", "http://127.0.0.1"), timeout=30) as client:
+    async with httpx.AsyncClient(base_url=config.get("PROCESSCORE_APP_BASE_URL", "http://127.0.0.1"), timeout=30) as client:
         for s in doc_screens:
             kind = screens.record_kind(s["url"])
             entry = {**s, "record_kind": kind, "search": False, "navigable": True, "route": {}}

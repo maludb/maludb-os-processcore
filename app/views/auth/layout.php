@@ -1,4 +1,4 @@
-<?php /** @var string $title  @var string $content */ $appName = (string) config('app.name', 'Cidery'); ?>
+<?php /** @var string $title  @var string $content */ $appName = (string) config('app.name', 'ProcessCore'); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

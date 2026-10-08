@@ -3,12 +3,12 @@ declare(strict_types=1);
 /**
  * The planning projection as JSON, for the records MCP server (one engine for the screens and the assistant).
  * Usage: php scripts/planning-json.php <firm|standing|all> [weeks]
- * Connects with the read-only records role from the environment (CIDERY_DB_HOST, CIDERY_DB_PORT, CIDERY_DB_NAME,
- * CIDERY_RECORDS_DB_USER, CIDERY_RECORDS_DB_PASSWORD, as in config/services.env); it never reads config/local.php.
+ * Connects with the read-only records role from the environment (PROCESSCORE_DB_HOST, PROCESSCORE_DB_PORT, PROCESSCORE_DB_NAME,
+ * PROCESSCORE_RECORDS_DB_USER, PROCESSCORE_RECORDS_DB_PASSWORD, as in config/services.env); it never reads config/local.php.
  */
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 $config = require dirname(__DIR__) . '/config/application.php';
-foreach (['host' => 'CIDERY_DB_HOST', 'port' => 'CIDERY_DB_PORT', 'name' => 'CIDERY_DB_NAME', 'user' => 'CIDERY_RECORDS_DB_USER', 'password' => 'CIDERY_RECORDS_DB_PASSWORD'] as $key => $env) {
+foreach (['host' => 'PROCESSCORE_DB_HOST', 'port' => 'PROCESSCORE_DB_PORT', 'name' => 'PROCESSCORE_DB_NAME', 'user' => 'PROCESSCORE_RECORDS_DB_USER', 'password' => 'PROCESSCORE_RECORDS_DB_PASSWORD'] as $key => $env) {
     $value = getenv($env);
     if ($value === false || $value === '') {
         fwrite(STDERR, "Missing $env in the environment.\n");

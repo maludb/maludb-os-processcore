@@ -3,8 +3,8 @@ declare(strict_types=1);
 /**
  * The mirror's timer (sign-on-and-directory.md §4; os-adopt adapter.md §6): every minute, GET the kernel's change feed
  * since the stored cursor and apply it to app.users — members[] (name, email, status of LINKED users) and access[]
- * (each affected member's capability and roles on Cidery; nothing held → no access and every session ended).
- * Departments and memberships are not mirrored: Cidery has no departments. --full refreshes from the start.
+ * (each affected member's capability and roles on ProcessCore; nothing held → no access and every session ended).
+ * Departments and memberships are not mirrored: ProcessCore has no departments. --full refreshes from the start.
  *   php bin/directory_sync.php [--full]
  *   php bin/directory_sync.php --from-file bin/dev_directory.json      a fixture in the kernel's format (testing-without-a-kernel.md)
  */
@@ -15,7 +15,7 @@ if (!os_enabled()) { echo "OS_ENABLED is off — nothing to sync.\n"; exit(0); }
 $opts = getopt('', ['full', 'from-file:']);
 $full = isset($opts['full']);
 $pdo = db();
-if (!(bool) $pdo->query("SELECT pg_try_advisory_lock(hashtext('cidery_directory_sync'))")->fetchColumn()) {
+if (!(bool) $pdo->query("SELECT pg_try_advisory_lock(hashtext('processcore_directory_sync'))")->fetchColumn()) {
     echo "another sync holds the lock — skipping.\n";
     exit(0);
 }

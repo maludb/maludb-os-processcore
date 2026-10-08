@@ -21,7 +21,7 @@ import httpx
 
 from . import config, db
 
-log = logging.getLogger("cidery_mcp.os")
+log = logging.getLogger("processcore_mcp.os")
 
 KERNEL_TOOLS = {"app_roles"}
 request_is_kernel: ContextVar[bool] = ContextVar("request_is_kernel", default=False)
@@ -33,7 +33,7 @@ _FACTS_TTL = 300
 
 
 def _key() -> bytes | None:
-    k = config.get("CIDERY_ACTION_TOKEN_KEY") or ""
+    k = config.get("PROCESSCORE_ACTION_TOKEN_KEY") or ""
     return k.encode() if len(k) >= 32 else None
 
 
@@ -43,7 +43,7 @@ def verify_kernel_token(token: str) -> bool:
     if key is None or len(parts) != 5 or parts[0] != "kernel":
         return False
     _, exp, app, nonce, sig = parts
-    if not exp.isdigit() or app != (config.get("APP_KEY", "cidery") or "cidery") or len(nonce) != 32:
+    if not exp.isdigit() or app != (config.get("APP_KEY", "processcore") or "processcore") or len(nonce) != 32:
         return False
     expected = hmac.new(key, f"kernel:{exp}.{app}.{nonce}".encode(), hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, sig) and time.time() <= int(exp)

@@ -1,5 +1,5 @@
 [Unit]
-Description=Cidery activity ingest: the memory schema and the tenant's MaluDB
+Description=ProcessCore activity ingest: the memory schema and the tenant's MaluDB
 After=network.target postgresql.service
 
 [Service]

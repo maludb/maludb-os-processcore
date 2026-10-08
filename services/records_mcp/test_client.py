@@ -2,7 +2,7 @@
 
     .venv/bin/python -m records_mcp.test_client [URL] [--token T] [--no-token] [--list] [--call TOOL JSON] [--suite] [--full]
 
-Default URL http://127.0.0.1:8701/mcp, default token CIDERY_SERVICE_RECORDS_TOKEN. --suite calls every tool at least once
+Default URL http://127.0.0.1:8701/mcp, default token PROCESSCORE_SERVICE_RECORDS_TOKEN. --suite calls every tool at least once
 against the real data (tagged with the question it answers) and checks the expected refusals."""
 from __future__ import annotations
 
@@ -130,7 +130,7 @@ async def main() -> int:
     ap.add_argument("--full", action="store_true", help="print full results")
     ap.add_argument("--json-out", default=None, help="write every suite result to this JSON file")
     a = ap.parse_args()
-    token = None if a.no_token else (a.token or config.get("CIDERY_SERVICE_RECORDS_TOKEN"))
+    token = None if a.no_token else (a.token or config.get("PROCESSCORE_SERVICE_RECORDS_TOKEN"))
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     async with create_mcp_http_client(headers=headers) as probe_client:
         probe = await probe_client.post(a.url, json={"jsonrpc": "2.0", "id": 0, "method": "ping"},

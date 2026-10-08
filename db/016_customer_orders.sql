@@ -1,6 +1,6 @@
 -- 016_customer_orders.sql — customer orders, standing orders, forecasts, spreadsheet imports,
 -- and the links that let an order drive packaging, shipping and production.
--- Plan: docs/11-customer-orders-plan.md. Design notes: docs/12-customer-orders-design.md.
+-- Plan: docs/cidery/11-customer-orders-plan.md. Design notes: docs/cidery/12-customer-orders-design.md.
 -- Orders are planning documents: nothing here touches the ledger, tax or TTB tables.
 SET search_path = app, public;
 

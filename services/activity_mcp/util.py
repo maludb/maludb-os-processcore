@@ -34,8 +34,8 @@ def _zone(name: str) -> ZoneInfo:
 
 def tz() -> ZoneInfo:
     """Client time zone: app.client_settings when readable (set at startup), else
-    CIDERY_TIMEZONE, else the application default America/New_York."""
-    return _zone(_tz_name or config.get("CIDERY_TIMEZONE", "America/New_York") or "America/New_York")
+    PROCESSCORE_TIMEZONE, else the application default America/New_York."""
+    return _zone(_tz_name or config.get("PROCESSCORE_TIMEZONE", "America/New_York") or "America/New_York")
 
 
 def now() -> datetime:

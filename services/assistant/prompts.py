@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from . import manifest
 
-APP_FACTS = """You are the assistant inside Cidery, the production and compliance system of a craft cidery \
+APP_FACTS = """You are the assistant inside ProcessCore, the production and compliance system of a craft processcore \
 (receiving fruit and materials, inventory and lots, recipes, production orders, pressing, fermentation batches, \
 packaging, kegs, quality and release, costing, TTB excise reporting, removals and recalls, customer orders and standing orders, \
 and planning: projections of what to package, brew and buy from firm, standing and forecast demand).

@@ -149,12 +149,12 @@ def _mcp_servers(action_token: str | None, confirmed: bool, show_prices: bool = 
         # The user pressed Confirm (a human click in PHP, never the model's say-so).
         actions_headers["X-Action-Confirmed"] = "1"
     return {
-        "records": {"type": "http", "url": f"http://127.0.0.1:{config.get('CIDERY_RECORDS_MCP_PORT', '8701')}/mcp",
+        "records": {"type": "http", "url": f"http://127.0.0.1:{config.get('PROCESSCORE_RECORDS_MCP_PORT', '8701')}/mcp",
                     # Prices and order values only for owner and sales users (records tools leave them out otherwise).
-                    "headers": {"Authorization": f"Bearer {config.get('CIDERY_SERVICE_RECORDS_TOKEN', '')}", "X-Cidery-Show-Prices": "1" if show_prices else "0"}},
-        "activity": {"type": "http", "url": f"http://127.0.0.1:{config.get('CIDERY_ACTIVITY_MCP_PORT', '8702')}/mcp",
-                     "headers": {"Authorization": f"Bearer {config.get('CIDERY_SERVICE_ACTIVITY_TOKEN', '')}"}},
-        "actions": {"type": "http", "url": f"http://127.0.0.1:{config.get('CIDERY_ACTIONS_MCP_PORT', '8703')}/mcp",
+                    "headers": {"Authorization": f"Bearer {config.get('PROCESSCORE_SERVICE_RECORDS_TOKEN', '')}", "X-ProcessCore-Show-Prices": "1" if show_prices else "0"}},
+        "activity": {"type": "http", "url": f"http://127.0.0.1:{config.get('PROCESSCORE_ACTIVITY_MCP_PORT', '8702')}/mcp",
+                     "headers": {"Authorization": f"Bearer {config.get('PROCESSCORE_SERVICE_ACTIVITY_TOKEN', '')}"}},
+        "actions": {"type": "http", "url": f"http://127.0.0.1:{config.get('PROCESSCORE_ACTIONS_MCP_PORT', '8703')}/mcp",
                     "headers": actions_headers},
     }
 
@@ -162,14 +162,14 @@ def _mcp_servers(action_token: str | None, confirmed: bool, show_prices: bool = 
 def build_options(*, surface: str, system_prompt: str, resume: str | None, action_token: str | None,
                   confirmed: bool, api_key: str, show_prices: bool = True) -> ClaudeAgentOptions:
     router = surface == "command_bar"
-    model = config.get("CIDERY_ROUTER_MODEL" if router else "CIDERY_AMA_MODEL") or None
-    effort = config.get("CIDERY_ROUTER_EFFORT", "low") if router else config.get("CIDERY_AMA_EFFORT")
+    model = config.get("PROCESSCORE_ROUTER_MODEL" if router else "PROCESSCORE_AMA_MODEL") or None
+    effort = config.get("PROCESSCORE_ROUTER_EFFORT", "low") if router else config.get("PROCESSCORE_AMA_EFFORT")
     effort = effort if effort in ("low", "medium", "high", "xhigh", "max") else None
-    budget = config.get("CIDERY_ASSISTANT_MAX_BUDGET_USD")
+    budget = config.get("PROCESSCORE_ASSISTANT_MAX_BUDGET_USD")
     WORK_DIR.mkdir(parents=True, exist_ok=True)
     CLI_HOME.mkdir(parents=True, exist_ok=True)
     disallowed = list(DENIED_BUILTINS)
-    if config.get("CIDERY_ASSISTANT_TOOL_SEARCH", "0") != "1":
+    if config.get("PROCESSCORE_ASSISTANT_TOOL_SEARCH", "0") != "1":
         disallowed.append("ToolSearch")
     return ClaudeAgentOptions(
         tools=[],                                   # no built-in tools at all
@@ -183,7 +183,7 @@ def build_options(*, surface: str, system_prompt: str, resume: str | None, actio
         system_prompt=system_prompt,                # replaces the Claude Code prompt entirely
         model=model,
         effort=effort,
-        max_turns=int(config.get("CIDERY_ROUTER_MAX_TURNS" if router else "CIDERY_AMA_MAX_TURNS", "8" if router else "24")),
+        max_turns=int(config.get("PROCESSCORE_ROUTER_MAX_TURNS" if router else "PROCESSCORE_AMA_MAX_TURNS", "8" if router else "24")),
         max_budget_usd=float(budget) if budget else None,
         resume=resume,
         cwd=str(WORK_DIR),
@@ -198,7 +198,7 @@ def build_options(*, surface: str, system_prompt: str, resume: str | None, actio
             "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
             "CLAUDE_CODE_DISABLE_CLAUDE_MDS": "1",
             "CLAUDE_CODE_MCP_STARTUP_WAIT_MS": "8000",
-            "CLAUDE_AGENT_SDK_CLIENT_APP": "cidery-assistant/1.0",
+            "CLAUDE_AGENT_SDK_CLIENT_APP": "processcore-assistant/1.0",
         },
         stderr=lambda line: log.debug("cli: %s", line[:500]),
     )

@@ -32,8 +32,8 @@ if ($message === '') {
 }
 
 // Beside the Business OS kernel (sign-on-and-directory.md §5): the utterance goes to the kernel's chat endpoint as the
-// acting person and ONE turn of Cidery's expert answers — its tools attached, every model call ledgered, approvals paused
-// in the kernel. Cidery holds no model key and runs no assistant service while OS_ENABLED is on.
+// acting person and ONE turn of ProcessCore's expert answers — its tools attached, every model call ledgered, approvals paused
+// in the kernel. ProcessCore holds no model key and runs no assistant service while OS_ENABLED is on.
 if (os_enabled()) {
     require_once dirname(__DIR__, 2) . '/app/os_assistant.php';
     os_assistant_turn($user, $surface, $message, $screen, $entity, $recordId, $render);

@@ -23,7 +23,7 @@ _client: httpx.AsyncClient | None = None
 def client() -> httpx.AsyncClient:
     global _client
     if _client is None:
-        _client = httpx.AsyncClient(base_url=config.get("CIDERY_APP_BASE_URL", "http://127.0.0.1"), timeout=30.0,
+        _client = httpx.AsyncClient(base_url=config.get("PROCESSCORE_APP_BASE_URL", "http://127.0.0.1"), timeout=30.0,
                                     follow_redirects=False)
     return _client
 

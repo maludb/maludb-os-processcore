@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /**
  * /sso — the Business OS kernel's hand-off (php-sign-on-kit.md §4, os-adopt adapter.md §3). Checks in order; any
- * failure is ONE page that never says which. Ends in Cidery's own login function (complete_login) so every session
+ * failure is ONE page that never says which. Ends in ProcessCore's own login function (complete_login) so every session
  * key the application expects is filled the way it always was; the TOTP challenge is not asked — the kernel
  * authenticated the person.
  */
@@ -58,7 +58,7 @@ try {
     $refuse($e->getMessage() === 'email-in-use' ? 'email-in-use' : 'link', $memberId);
 }
 
-complete_login($user, 'os');                        // Cidery's own login function: session id regenerated, CSRF rotated, the session listed, logged
+complete_login($user, 'os');                        // ProcessCore's own login function: session id regenerated, CSRF rotated, the session listed, logged
 log_activity($pdo, 'os_sign_on', 'user', (int) $user['id'], $user['display_name'], null, ['capability' => $claims['capability'], 'roles' => user_os_roles($user)], [], 'sso', 'web', (int) $user['id'], 'user/' . $user['id'] . ' ' . $user['display_name']);
 header('Location: /', true, 302);
 exit;

@@ -1,6 +1,6 @@
 {
-    "name": "cidery/app",
-    "description": "Cidery memory-first inventory application",
+    "name": "processcore/app",
+    "description": "ProcessCore — a base manufacturing application for converting processes",
     "type": "project",
     "minimum-stability": "stable",
     "require": {

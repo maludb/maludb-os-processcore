@@ -1,5 +1,5 @@
 """Async connection pools. The read servers query through their read-only role;
-the 'app' pool (cidery_app) is used only for token checks and activity logging."""
+the 'app' pool (processcore_app) is used only for token checks and activity logging."""
 from __future__ import annotations
 
 from typing import Any

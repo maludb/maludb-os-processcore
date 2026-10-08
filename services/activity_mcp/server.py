@@ -1,7 +1,7 @@
-"""cidery_activity_mcp — activity memory over app.activity_log and MaluDB.
+"""processcore_activity_mcp — activity memory over app.activity_log and MaluDB.
 
 Run from /var/www/services:  .venv/bin/python -m activity_mcp.server
-Serves stateless JSON streamable HTTP at http://127.0.0.1:$CIDERY_ACTIVITY_MCP_PORT/mcp
+Serves stateless JSON streamable HTTP at http://127.0.0.1:$PROCESSCORE_ACTIVITY_MCP_PORT/mcp
 behind a bearer check (scope 'activity'); /health is open."""
 from __future__ import annotations
 
@@ -21,12 +21,12 @@ from . import models as m
 from . import queries as q
 from .util import PERIOD_HELP, set_timezone
 
-log = logging.getLogger("cidery_activity_mcp")
+log = logging.getLogger("processcore_activity_mcp")
 
-SERVER_NAME = "cidery_activity_mcp"
+SERVER_NAME = "processcore_activity_mcp"
 READ_ONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
 
-INSTRUCTIONS = f"""Activity memory of the cidery: who did what, when, on which record, from which screen, through which channel
+INSTRUCTIONS = f"""Activity memory of ProcessCore: who did what, when, on which record, from which screen, through which channel
 (screen, command_bar = the assistant acting for a person, ama, mcp = client AI tools, system). Every screen entry and every
 action is a row; nothing here is current state (ask the records server for quantities, statuses and documents).
 
@@ -67,7 +67,7 @@ async def _run(tool: str, params: Any, fn: Callable[[], Awaitable[dict[str, Any]
 
 
 def build_server(schema_text: str, schemas: set[str]) -> MCPServer:
-    server = MCPServer(name=SERVER_NAME, title="Cidery activity memory", instructions=INSTRUCTIONS, version="1.0.0")
+    server = MCPServer(name=SERVER_NAME, title="ProcessCore activity memory", instructions=INSTRUCTIONS, version="1.0.0")
 
     @server.tool(name="activity_record_history", title="Record history", annotations=READ_ONLY, description=
         "Everything that ever happened to one record, oldest first: who created, changed, posted, released, opened it; "
@@ -144,7 +144,7 @@ def build_server(schema_text: str, schemas: set[str]) -> MCPServer:
         return await _run("activity_assistant_actions", params, lambda: q.assistant_actions(params))
 
     @server.tool(name="activity_mcp_usage", title="MCP usage by client AI tools", annotations=READ_ONLY, description=
-        "Calls made to the cidery MCP servers by client AI tools, summarised per access token (calls, tools used, errors, first and "
+        "Calls made to ProcessCore MCP servers by client AI tools, summarised per access token (calls, tools used, errors, first and "
         "last call) with the individual calls and their arguments. "
         "Answers A12 (which client AI tools queried our memory this week, and what did they ask: period='this_week').")
     async def activity_mcp_usage(params: m.McpUsageInput) -> Result:
@@ -185,7 +185,7 @@ def main() -> None:
     set_timezone(zone)
     server = build_server(schema_text, schemas)
     app = serve.build_app(server, scope="activity", server_name=SERVER_NAME)
-    serve.run(app, int(config.get("CIDERY_ACTIVITY_MCP_PORT", "8702") or 8702))
+    serve.run(app, int(config.get("PROCESSCORE_ACTIVITY_MCP_PORT", "8702") or 8702))
 
 
 if __name__ == "__main__":

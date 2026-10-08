@@ -1,8 +1,8 @@
-"""cidery_actions_mcp — localhost-only MCP server for the command bar and the AMA agent:
+"""processcore_actions_mcp — localhost-only MCP server for the command bar and the AMA agent:
 navigate (screen registry), find_record, the action tools, and undo_last.
 
 Run from /var/www/services:  .venv/bin/python -m actions_mcp.server
-Port CIDERY_ACTIONS_MCP_PORT (8703), bound to 127.0.0.1, no bearer: every tool call must carry
+Port PROCESSCORE_ACTIONS_MCP_PORT (8703), bound to 127.0.0.1, no bearer: every tool call must carry
 the X-Action-Token header PHP minted for the message (the assistant service sets it on the
 MCP HTTP request; the model never sees it). POST /undo serves html/assistant/undo.php.
 """
@@ -29,7 +29,7 @@ from . import actions, actions_orders, catalog, core, resolve, screens, undo  # 
 
 log = logging.getLogger(core.SERVER_NAME)
 
-INSTRUCTIONS = """Cidery actions: take the user to a screen (navigate), resolve a record by its label (find_record),
+INSTRUCTIONS = """ProcessCore actions: take the user to a screen (navigate), resolve a record by its label (find_record),
 perform an action through the app's own screens (one tool per action), and undo the last action (undo_last).
 Every call needs the X-Action-Token header for the current message. Questions are answered by the records and
 activity servers, never here. One action or navigation per message; after a success, reply in one short
@@ -298,7 +298,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     asyncio.run(_startup_catalog())
     server = create_server()
-    port = int(config.get("CIDERY_ACTIONS_MCP_PORT", "8703"))
+    port = int(config.get("PROCESSCORE_ACTIONS_MCP_PORT", "8703"))
     app = serve.build_app(server, scope=None, server_name=core.SERVER_NAME,
                           allowed_hosts=[f"127.0.0.1:{port}", f"localhost:{port}", "127.0.0.1", "localhost"])
     serve.run(app, port)

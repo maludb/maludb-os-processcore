@@ -1,4 +1,4 @@
--- 022_tank_view.sql — the Tank view (Inventory): vessels arranged as they stand on the floor. Run as cidery_app.
+-- 022_tank_view.sql — the Tank view (Inventory): vessels arranged as they stand on the floor. Run as processcore_app.
 -- A vessel remembers its place on the board in grid units (20 px each in the screen); NULL = not yet placed, the
 -- screen lays those out after the placed ones. v_vessel_board gains the position and the juice lot's item name,
 -- appended last so dependent readers keep working.

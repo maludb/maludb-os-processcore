@@ -7,13 +7,13 @@ declare(strict_types=1);
 // OS/env key is read with env('OS_ENABLED').
 $defaults = [
     'app' => [
-        'name'        => 'Cidery',
+        'name'        => 'ProcessCore',
         'base_url'    => 'http://127.0.0.1',
         'environment' => 'production',
         'timezone'    => 'America/New_York',
     ],
     'db' => [
-        'host' => '127.0.0.1', 'port' => '5432', 'name' => 'cidery_dev', 'user' => 'cidery_app', 'password' => '',
+        'host' => '127.0.0.1', 'port' => '5432', 'name' => 'processcore_dev', 'user' => 'processcore_app', 'password' => '',
     ],
     'security' => [
         'totp_key'            => '',   // 64 hex chars, libsodium secretbox key for TOTP seeds
@@ -28,11 +28,11 @@ $defaults = [
         'invite_token_days'          => 7,
     ],
     'google' => ['client_id' => '', 'client_secret' => ''],
-    'malumail' => ['api_key' => '', 'from' => 'noreply@example.com', 'from_name' => 'Cidery'],
+    'malumail' => ['api_key' => '', 'from' => 'noreply@example.com', 'from_name' => 'ProcessCore'],
     'assistant' => ['service_url' => 'http://127.0.0.1:8765'],
     // The Business OS kernel (maludb-os-integration): empty = standalone.
     'os' => [
-        'enabled' => '', 'app_key' => 'cidery', 'internal_url' => 'http://127.0.0.1:8080', 'launcher_url' => '',
+        'enabled' => '', 'app_key' => 'processcore', 'internal_url' => 'http://127.0.0.1:8080', 'launcher_url' => '',
         'application_token' => '', 'actions_relay_key' => '', 'maludb_api_url' => '', 'maludb_api_token' => '',
     ],
 ];

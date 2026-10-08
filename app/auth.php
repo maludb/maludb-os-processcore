@@ -71,12 +71,12 @@ function user_can(array $user, string ...$roles): bool
     if ($user['role'] === 'owner' || in_array($user['role'], $roles, true)) {
         return true;
     }
-    // Under the OS a person may hold SEVERAL of Cidery's roles (users.os_roles, from the kernel's grant).
+    // Under the OS a person may hold SEVERAL of ProcessCore's roles (users.os_roles, from the kernel's grant).
     $held = user_os_roles($user);
     return in_array('owner', $held, true) || array_intersect($held, $roles) !== [];
 }
 
-/** The set of Cidery roles the kernel granted this user (empty when standalone or not yet told). */
+/** The set of ProcessCore roles the kernel granted this user (empty when standalone or not yet told). */
 function user_os_roles(array $user): array
 {
     $raw = (string) ($user['os_roles'] ?? '');
@@ -229,7 +229,7 @@ function mint_action_token(int $userId, int $ttlSeconds = 300): string
 
 /**
  * The user id a valid token carries, or null. Only accepted from localhost. Two families share the key:
- * Cidery's own 2-part token (its standalone assistant), and under the Business OS the tenant's 3-part (a person)
+ * ProcessCore's own 2-part token (its standalone assistant), and under the Business OS the tenant's 3-part (a person)
  * or 4-part (an agent run, relayed by the kernel's actions server) tokens — os_action_token_user().
  */
 function verify_action_token(?string $token): ?int

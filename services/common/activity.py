@@ -13,7 +13,7 @@ from . import db
 
 current_token_name: ContextVar[str] = ContextVar("current_token_name", default="unknown")
 current_server: ContextVar[str] = ContextVar("current_server", default="mcp")
-# False when the caller may not see prices and order values (the assistant sends X-Cidery-Show-Prices: 0 for
+# False when the caller may not see prices and order values (the assistant sends X-ProcessCore-Show-Prices: 0 for
 # users who are neither owner nor sales). Client tokens are created by owners, so they default to showing them.
 current_show_prices: ContextVar[bool] = ContextVar("current_show_prices", default=True)
 

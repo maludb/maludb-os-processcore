@@ -195,7 +195,7 @@ def main() -> int:
         health = client.get(args.url.rstrip("/") + "/health").json()
         print(f"service mode: {health.get('mode')}  router {health.get('router_model')}@{health.get('router_effort')}  ama {health.get('ama_model')}")
         if health.get("mode") == "unconfigured":
-            print("ANTHROPIC_API_KEY is not set; every turn would answer 'not configured'. Set it and restart cidery-assistant.")
+            print("ANTHROPIC_API_KEY is not set; every turn would answer 'not configured'. Set it and restart processcore-assistant.")
             return 2
         RESULTS_DIR.mkdir(exist_ok=True)
         out_path = RESULTS_DIR / (dt.datetime.now().strftime("%Y%m%d-%H%M%S") + ".jsonl")

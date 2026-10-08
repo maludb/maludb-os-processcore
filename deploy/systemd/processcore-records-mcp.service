@@ -1,9 +1,9 @@
-# /etc/systemd/system/cidery-records-mcp.service
-# The records-memory MCP server (cidery_records_mcp) on 127.0.0.1 port 8701. Read-only.
-# Exposed by Apache at /mcp/records (deploy/apache/cidery-services.conf) behind bearer
+# /etc/systemd/system/processcore-records-mcp.service
+# The records-memory MCP server (processcore_records_mcp) on 127.0.0.1 port 8701. Read-only.
+# Exposed by Apache at /mcp/records (deploy/apache/processcore-services.conf) behind bearer
 # tokens issued on the AI access tokens screen (scope 'records').
 [Unit]
-Description=Cidery records-memory MCP server (cidery_records_mcp, port 8701)
+Description=ProcessCore records-memory MCP server (processcore_records_mcp, port 8701)
 After=network.target postgresql.service
 Wants=postgresql.service
 

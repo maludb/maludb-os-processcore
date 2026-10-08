@@ -7,17 +7,17 @@ return [
     'db' => [
         'host'     => '127.0.0.1',
         'port'     => '5432',
-        'name'     => 'cidery_dev',          // cidery_<slug> from deploy/provision-client.sh
-        'user'     => 'cidery_app',
-        'password' => '',                    // ALTER ROLE cidery_app PASSWORD '...'
+        'name'     => 'processcore_dev',          // processcore_<slug> from deploy/provision-client.sh
+        'user'     => 'processcore_app',
+        'password' => '',                    // ALTER ROLE processcore_app PASSWORD '...'
     ],
     'app' => [
-        'base_url'    => 'https://cidery.example.com',   // public URL, no trailing slash; used in invite links and the Google redirect URI
+        'base_url'    => 'https://processcore.example.com',   // public URL, no trailing slash; used in invite links and the Google redirect URI
         'environment' => 'production',                    // or 'development'
     ],
     'security' => [
         'totp_key'            => '',   // openssl rand -hex 32  (encrypts TOTP seeds at rest)
-        'action_token_key'    => '',   // openssl rand -hex 32  (HMAC for assistant action tokens; must equal CIDERY_ACTION_TOKEN_KEY in services.env)
+        'action_token_key'    => '',   // openssl rand -hex 32  (HMAC for assistant action tokens; must equal PROCESSCORE_ACTION_TOKEN_KEY in services.env)
         'dummy_password_hash' => '',   // php -r "echo password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT, ['cost' => 12]);"
     ],
     'google' => [                      // optional: leave empty to disable Google sign-in
@@ -27,6 +27,6 @@ return [
     'malumail' => [                    // optional: leave api_key empty to log mail to the Apache error log instead of sending
         'api_key'   => '',
         'from'      => 'noreply@example.com',
-        'from_name' => 'Cidery',
+        'from_name' => 'ProcessCore',
     ],
 ];

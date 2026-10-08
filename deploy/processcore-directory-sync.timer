@@ -1,5 +1,5 @@
 [Unit]
-Description=Cidery activity-ingest, every minute
+Description=ProcessCore directory-sync, every minute
 
 [Timer]
 OnBootSec=1min

@@ -1,5 +1,5 @@
 [Unit]
-Description=Cidery directory mirror: the Business OS change feed
+Description=ProcessCore directory mirror: the Business OS change feed
 After=network.target postgresql.service
 
 [Service]

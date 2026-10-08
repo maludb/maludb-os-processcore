@@ -1,6 +1,6 @@
 # Records MCP server evaluation (R1 to R54)
 
-Run on 2026-10-01 against `cidery_dev` through Apache (`http://127.0.0.1/mcp/records`, systemd unit `cidery-records-mcp`) with
+Run on 2026-10-01 against `processcore_dev` through Apache (`http://127.0.0.1/mcp/records`, systemd unit `processcore-records-mcp`) with
 `.venv/bin/python -m records_mcp.test_client http://127.0.0.1/mcp/records --suite` (83 calls, 83 behaved as expected; all 57 tools
 called). Arguments are sent as `{"params": {...}}`. The dev data was entered in one day, so nearly every record is dated
 2026-10-01 (some readings 2026-10-02), and some timestamps are later than the clock at test time.
@@ -91,6 +91,6 @@ called). Arguments are sent as `{"params": {...}}`. The dev data was entered in 
 | O3 | `orders_history {group_by: "month", 2026}` | 2026-06: 1 order, 6 units, $960; 2026-10: 1 order, 73 units, $129.60. |
 | O4 | `standing_orders_find {include_paused: true}` | STO-0001 (every week on Friday) and STO-0002 (every month on day 15), both paused, with lines. |
 | O5 to O7 | `purchase_projection {weeks: 6}`, `production_projection {level: "all"}` | Juice short 1,892.7 L this week (1,250 gal suggested, about $5,625) for planned production; bulk supply lists B-26-004, B-26-006, B-26-001 and the unstarted production orders. |
-| Prices | the same calls with `X-Cidery-Show-Prices: 0` | `unit_price`, `order_value`, `approx_cost` absent. |
+| Prices | the same calls with `X-ProcessCore-Show-Prices: 0` | `unit_price`, `order_value`, `approx_cost` absent. |
 
 Live assistant turns (sales user): the AMA question "what do we need to buy in the next 4 weeks" answered from `purchase_projection` (driven by planned production); the dictated "the hill taproom wants three half barrels next friday, their PO is TAP-77" created and confirmed SO-00013; "undo that" cancelled it. As a production user, a question about order values was answered in units with the values withheld.

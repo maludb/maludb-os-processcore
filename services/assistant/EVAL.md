@@ -41,8 +41,8 @@ Login, two-factor challenge and password reset are full-page auth screens, not n
 | S006 | - | where do I make an AI access token | navigate settings-mcp-tokens |
 | S007 | - | show me the activity log | navigate activity-list |
 | S008 | - | go to premises | navigate premises-list |
-| S009 | - | add a new premises called hill cidery annex | navigate premises-add |
-| S010 | - | edit the hill cidery bonded winery premises | navigate premises-edit |
+| S009 | - | add a new premises called hill processcore annex | navigate premises-add |
+| S010 | - | edit the hill processcore bonded winery premises | navigate premises-edit |
 | S011 | - | show me the locations | navigate locations-list |
 | S012 | - | new location called overflow cooler | navigate location-add |
 | S013 | - | edit the cold room location | navigate location-edit |
@@ -173,9 +173,9 @@ Ids, labels and quantities are from the dev database. The runner resolves each a
 
 | Id | Context | Utterance | Expect |
 |---|---|---|---|
-| A001 | premises-list | add a premises called hill cidery annex a bonded winery registry BWN NY 99999 filing quarterly | action premises_create |
-| A002 | - | change the hill cidery bonded winery filing frequency to monthly | action premises_update |
-| A003 | locations-list | create a location called overflow cooler in bond at hill cidery bonded winery | action location_create |
+| A001 | premises-list | add a premises called hill processcore annex a bonded winery registry BWN NY 99999 filing quarterly | action premises_create |
+| A002 | - | change the hill processcore bonded winery filing frequency to monthly | action premises_update |
+| A003 | locations-list | create a location called overflow cooler in bond at hill processcore bonded winery | action location_create |
 | A004 | - | rename the taproom location to taproom bar | action location_update |
 | A005 | vessels-list | add a vessel FV three a fermenter five hundred gallons in the cellar | action vessel_create |
 | A006 | - | change tote one capacity to two seventy five gallons | action vessel_update |
@@ -277,7 +277,7 @@ Ids, labels and quantities are from the dev database. The runner resolves each a
 | A102 | - | reverse removal RM-00002 they never took it | confirm removal_reverse |
 | A103 | - | green mountain returned two cases of L-261001-009 | action return_create |
 | A104 | - | post the return from green mountain | confirm return_post |
-| A105 | - | generate the TTB report for september for hill cidery bonded winery | action ttb_report_generate |
+| A105 | - | generate the TTB report for september for hill processcore bonded winery | action ttb_report_generate |
 | A106 | - | regenerate RPT-00003 | action ttb_report_regenerate |
 | A107 | - | finalize RPT-00003 | confirm ttb_report_finalize |
 | A108 | - | mark RPT-00001 filed today | confirm ttb_report_mark_filed |

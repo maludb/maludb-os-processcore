@@ -2,7 +2,7 @@
 /** @var string $title  @var string $screen  @var string $content */
 $user = current_user();
 $flashes = take_flashes();
-$appName = (string) config('app.name', 'Cidery');
+$appName = (string) config('app.name', 'ProcessCore');
 ?>
 <!DOCTYPE html>
 <html lang="en">

@@ -44,7 +44,7 @@ function totp_provisioning_uri(string $secret, string $email): string
 {
     $totp = TOTP::createFromSecret($secret);
     $totp->setLabel($email);
-    $totp->setIssuer((string) config('app.name', 'Cidery'));
+    $totp->setIssuer((string) config('app.name', 'ProcessCore'));
     return $totp->getProvisioningUri();
 }
 

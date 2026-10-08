@@ -268,7 +268,7 @@ Each step ends with a proof script in `scripts/`, a commit on `main`, and a line
    manifest rows, skills paragraphs; the navigation of section 9; the roles of section 8. Proof: the shell and every
    surviving screen render as owner, production and viewer; the manifest builder and the registry builder run clean.
 4. **Runs — the exemplar (section 5).** Schema already in; screens, handlers, activity events, the records tools,
-   the actions with undo, the booking link, the yield views; `docs/build-specs/runs.md` the exemplar spec. Proof: the
+   the actions with undo, the booking link, the yield views; `docs/cidery/build-specs/runs.md` the exemplar spec. Proof: the
    worked example of section 5 end to end over HTTP on `processcore_dev`.
 5. **The steel profile and the lot.** Attributes on items, products and lots (D5); weigh tickets and certificates on
    the receipt line; the lot view with its heat, dimensions, certificate and lineage; theoretical weight; the profile

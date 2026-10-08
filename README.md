@@ -1,25 +1,27 @@
 # ProcessCore
 
-**A base manufacturing application for converting processes — steel processing the default profile.** Forked from
-[maludb-os-cidery](https://github.com/maludb/maludb-os-cidery) on 2026-10-08 with its history; the plan for turning it into
-the generic application is [docs/processcore-design.md](docs/processcore-design.md) (awaiting the owner's decisions). Until
-that plan's first step lands, the code and everything below is the cidery's.
+**A base manufacturing application for converting processes — steel processing the default profile.** Material arrives as
+lots, is transformed by runs on equipment into other lots (products, co-products, scrap), is packed, released by quality and
+shipped; every quantity is on the inventory ledger and every lot is traceable to what it came from. Industry is data, not
+code: a profile seeds the item classes, operations, measurements and vocabulary. Built on the htmx-php-builder plugin stack
+(PostgreSQL 17 + MaluDB, Apache, vanilla PHP 8.3, Bootstrap 5.3 nxl, HTMX, Python MCP servers), one of the applications of the
+MaluDB Business OS.
 
----
-
-# Cidery
-
-A memory-first, ask-me-anything inventory and production application for small cideries (beer and wine later), built on the htmx-php-builder plugin stack: PostgreSQL 17 + MaluDB, Apache, vanilla PHP 8.3, Bootstrap 5.3 (nxl theme), HTMX, and a set of Python services (MCP servers and a Claude-powered assistant).
+Forked from [maludb-os-cidery](https://github.com/maludb/maludb-os-cidery) on 2026-10-08 with its history. The plan that turns
+the cidery into the generic application is [docs/processcore-design.md](docs/processcore-design.md) (approved the same day);
+[docs/processcore-progress.md](docs/processcore-progress.md) records the build step by step; the cidery's own documents are
+kept under [docs/cidery/](docs/cidery/) as the record of what was forked. **State:** step 1 (the rename) is done — the
+product is named ProcessCore everywhere, and the domain model is still the cidery's until steps 2–5 land.
 
 ## Beside the MaluDB Business OS (since 2026-10-04)
 
-Cidery is one of the applications of the Business OS suite. On a server that runs the kernel it is installed by the
-kernel's installer — `sudo php /var/www/bin/app_install.php apply https://github.com/maludb/maludb-os-cidery.git --by <super-admin> --domain <domain>` —
-which reads `maludb-os.json`, puts the code at `/srv/apps/cidery`, provisions `<tenant>_cidery` with `deploy/os-provision.sh`,
+ProcessCore is one of the applications of the Business OS suite. On a server that runs the kernel it is installed by the
+kernel's installer — `sudo php /var/www/bin/app_install.php apply https://github.com/maludb/maludb-os-processcore.git --by <super-admin> --domain <domain>` —
+which reads `maludb-os.json`, puts the code at `/srv/apps/processcore`, provisions `<tenant>_processcore` with `deploy/os-provision.sh`,
 writes `config/.env`, renders the vhost and units in `deploy/`, registers the application, mints its token and proves the
-sign-on. People then open Cidery from the kernel's launcher (no password here), their roles come from the kernel's grants,
-and the command bar runs Cidery's expert agent in the kernel. Everything below describes the **standalone** product, which
-is unchanged and is what runs when `OS_ENABLED` is not set. The adoption record: `docs/os-adoption.md`.
+sign-on. People then open ProcessCore from the kernel's launcher (no password here), their roles come from the kernel's grants,
+and the command bar runs ProcessCore's expert agent in the kernel. Everything below describes the **standalone** product, which
+is unchanged and is what runs when `OS_ENABLED` is not set. The adoption record: `docs/cidery/os-adoption.md`.
 
 ## Layout
 
@@ -72,7 +74,7 @@ These are gitignored and must be created on every host. Nothing in the repositor
 
 `config/manifest.json` is generated but committed, because the actions MCP server needs it at start. Regenerate it after adding screens or actions (see "Keeping the manifest current").
 
-Two values must match between the two secret files: `security.action_token_key` in `local.php` equals `CIDERY_ACTION_TOKEN_KEY` in `services.env`, and the database settings describe the same database.
+Two values must match between the two secret files: `security.action_token_key` in `local.php` equals `PROCESSCORE_ACTION_TOKEN_KEY` in `services.env`, and the database settings describe the same database.
 
 ## Installation
 
@@ -88,10 +90,10 @@ cd /var/www && composer install --no-dev
 
 ### 2. Provision the client database
 
-One PostgreSQL database per client (`cidery_<slug>`) plus the shared operator registry `cidery_host`. The script creates the cluster roles, the databases, installs `maludb_core`, enables the MaluDB memory schema, applies every `db/*.sql` file in order, applies the read-only grants and registers the client.
+One PostgreSQL database per client (`processcore_<slug>`) plus the shared operator registry `processcore_host`. The script creates the cluster roles, the databases, installs `maludb_core`, enables the MaluDB memory schema, applies every `db/*.sql` file in order, applies the read-only grants and registers the client.
 
 ```
-deploy/provision-client.sh dev "Dev Cidery" owner@example.com [subdomain]
+deploy/provision-client.sh dev "Dev ProcessCore" owner@example.com [subdomain]
 ```
 
 The optional fourth argument is the client's subdomain and doubles as the folder name under `storage/`; it defaults to the slug. The script refuses to run against an existing database, so drop it first to re-provision.
@@ -99,9 +101,9 @@ The optional fourth argument is the client's subdomain and doubles as the folder
 Then set passwords on the three roles. The SQL files create the roles without passwords.
 
 ```
-sudo -u postgres psql -c "ALTER ROLE cidery_app PASSWORD '...'" \
-                      -c "ALTER ROLE cidery_records_ro PASSWORD '...'" \
-                      -c "ALTER ROLE cidery_activity_ro PASSWORD '...'"
+sudo -u postgres psql -c "ALTER ROLE processcore_app PASSWORD '...'" \
+                      -c "ALTER ROLE processcore_records_ro PASSWORD '...'" \
+                      -c "ALTER ROLE processcore_activity_ro PASSWORD '...'"
 ```
 
 Local connections must be allowed with a password for these roles in `pg_hba.conf` (`scram-sha-256` on `127.0.0.1`).
@@ -150,7 +152,7 @@ DocumentRoot /var/www/html
     AllowOverride All
     Require all granted
 </Directory>
-Include /var/www/deploy/apache/cidery-services.conf
+Include /var/www/deploy/apache/processcore-services.conf
 ```
 
 Then `sudo systemctl reload apache2`. The include proxies only `/mcp/records`, `/mcp/activity` and `/assistant/stream`; the actions server and the rest of the assistant stay on localhost.
@@ -185,13 +187,13 @@ services/.venv/bin/pip install -r services/requirements.txt
 cp config/services.env.example config/services.env && chmod 0600 config/services.env
 ```
 
-Fill in the three role passwords from step 2, copy `security.action_token_key` from `local.php` into `CIDERY_ACTION_TOKEN_KEY`, set `CIDERY_APP_BASE_URL` to the same value as `app.base_url`, and set `ANTHROPIC_API_KEY`. Both an API key (`sk-ant-api...`) and a Claude Code OAuth token (`sk-ant-oat...`) are accepted. Without a key the services still start and the assistant answers that it is not configured.
+Fill in the three role passwords from step 2, copy `security.action_token_key` from `local.php` into `PROCESSCORE_ACTION_TOKEN_KEY`, set `PROCESSCORE_APP_BASE_URL` to the same value as `app.base_url`, and set `ANTHROPIC_API_KEY`. Both an API key (`sk-ant-api...`) and a Claude Code OAuth token (`sk-ant-oat...`) are accepted. Without a key the services still start and the assistant answers that it is not configured.
 
 ### 10. Register the assistant's own MCP tokens
 
 The assistant reads records and activity through the same bearer-token MCP endpoints external AI clients use. Tokens issued to people are created on the AI access tokens screen (`/settings/mcp-tokens`). The assistant's two tokens are named `assistant-service` and are registered once by hand, because the screen cannot create tokens it is not allowed to revoke.
 
-Generate two tokens and put them in `services.env` as `CIDERY_SERVICE_RECORDS_TOKEN` and `CIDERY_SERVICE_ACTIVITY_TOKEN`:
+Generate two tokens and put them in `services.env` as `PROCESSCORE_SERVICE_RECORDS_TOKEN` and `PROCESSCORE_SERVICE_ACTIVITY_TOKEN`:
 
 ```
 openssl rand -hex 32
@@ -201,8 +203,8 @@ openssl rand -hex 32
 Then store their hashes, with the owner created in step 6 as `created_by`:
 
 ```
-sudo -u postgres psql -d cidery_dev <<'SQL'
-SET ROLE cidery_app;
+sudo -u postgres psql -d processcore_dev <<'SQL'
+SET ROLE processcore_app;
 INSERT INTO app.mcp_access_tokens (name, scope, token_prefix, token_hash, created_by)
 SELECT 'assistant-service', 'records',  left('<records token>', 8),  encode(sha256('<records token>'::bytea), 'hex'),  id FROM app.users WHERE role = 'owner' ORDER BY id LIMIT 1;
 INSERT INTO app.mcp_access_tokens (name, scope, token_prefix, token_hash, created_by)
@@ -217,20 +219,20 @@ The screen lists them flagged as service tokens.
 The units run as `maludb` from `/var/www/services` and load `config/services.env`. Edit `User=` first if your owner differs.
 
 ```
-sudo cp deploy/systemd/*.service deploy/cidery-activity-ingest.service deploy/cidery-activity-ingest.timer /etc/systemd/system/
+sudo cp deploy/systemd/*.service deploy/processcore-activity-ingest.service deploy/processcore-activity-ingest.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now cidery-records-mcp cidery-activity-mcp cidery-actions-mcp cidery-assistant cidery-activity-ingest.timer
+sudo systemctl enable --now processcore-records-mcp processcore-activity-mcp processcore-actions-mcp processcore-assistant processcore-activity-ingest.timer
 ```
 
 | Unit | Listens on | Purpose |
 |---|---|---|
-| `cidery-records-mcp` | 127.0.0.1:8701 | read-only record memory; exposed by Apache at `/mcp/records` |
-| `cidery-activity-mcp` | 127.0.0.1:8702 | read-only activity memory; exposed at `/mcp/activity` |
-| `cidery-actions-mcp` | 127.0.0.1:8703 | navigation, voice actions and undo for the assistant; never exposed |
-| `cidery-assistant` | 127.0.0.1:8765 | the Claude Agent SDK assistant; only `/assistant/stream` is exposed |
-| `cidery-activity-ingest.timer` | | every minute, ships `app.activity_log` rows into the MaluDB memory schema of every active client |
+| `processcore-records-mcp` | 127.0.0.1:8701 | read-only record memory; exposed by Apache at `/mcp/records` |
+| `processcore-activity-mcp` | 127.0.0.1:8702 | read-only activity memory; exposed at `/mcp/activity` |
+| `processcore-actions-mcp` | 127.0.0.1:8703 | navigation, voice actions and undo for the assistant; never exposed |
+| `processcore-assistant` | 127.0.0.1:8765 | the Claude Agent SDK assistant; only `/assistant/stream` is exposed |
+| `processcore-activity-ingest.timer` | | every minute, ships `app.activity_log` rows into the MaluDB memory schema of every active client |
 
-Check with `systemctl status 'cidery-*'` and `journalctl -u cidery-assistant -f`. Smoke tests: `services/.venv/bin/python -m records_mcp.test_client --suite` and `-m activity_mcp.test_client --suite` call every tool with the service tokens; `-m assistant.run_eval` runs the assistant evaluation (it writes to the database and undoes afterwards).
+Check with `systemctl status 'processcore-*'` and `journalctl -u processcore-assistant -f`. Smoke tests: `services/.venv/bin/python -m records_mcp.test_client --suite` and `-m activity_mcp.test_client --suite` call every tool with the service tokens; `-m assistant.run_eval` runs the assistant evaluation (it writes to the database and undoes afterwards).
 
 ## Keeping the manifest current
 
@@ -240,7 +242,7 @@ Check with `systemctl status 'cidery-*'` and `journalctl -u cidery-assistant -f`
 cd /var/www/services && .venv/bin/python -m actions_mcp.build_manifest
 ```
 
-It walks the screens as a user through an action token minted by `scripts/mint-action-token.php`, so it needs `config/local.php` readable and PHP on the path. Commit the result and restart `cidery-actions-mcp`.
+It walks the screens as a user through an action token minted by `scripts/mint-action-token.php`, so it needs `config/local.php` readable and PHP on the path. Commit the result and restart `processcore-actions-mcp`.
 
 ## Upgrading an existing install
 
@@ -248,18 +250,18 @@ It walks the screens as a user through an action token minted by `scripts/mint-a
 git pull
 composer install --no-dev
 services/.venv/bin/pip install -r services/requirements.txt
-sudo systemctl restart cidery-records-mcp cidery-activity-mcp cidery-actions-mcp cidery-assistant
+sudo systemctl restart processcore-records-mcp processcore-activity-mcp processcore-actions-mcp processcore-assistant
 ```
 
-Schema changes arrive as new numbered files in `db/`. Apply any file newer than the client's `schema_version` in `cidery_host.clients` as `cidery_app`, then re-run `db/020_grants.sql` as superuser and update `schema_version`. Files already applied are never edited (see `db/README.md`).
+Schema changes arrive as new numbered files in `db/`. Apply any file newer than the client's `schema_version` in `processcore_host.clients` as `processcore_app`, then re-run `db/020_grants.sql` as superuser and update `schema_version`. Files already applied are never edited (see `db/README.md`).
 
 ## Development notes
 
-- `scripts/conformance.sh <feature> ...` runs the mechanical per-slice checks from `docs/07-phase3-conventions.md` (lint, CSRF, POST guards, no modals).
+- `scripts/conformance.sh <feature> ...` runs the mechanical per-slice checks from `docs/cidery/07-phase3-conventions.md` (lint, CSRF, POST guards, no modals).
 - `scripts/mint-action-token.php <user_id>` mints an assistant action token for calling the actions MCP server by hand.
-- `CIDERY_ASSISTANT_FAKE=1` in `config/services.env` makes the assistant service return deterministic results with no model call, so the command bar and PHP integration can be tested without a key.
+- `PROCESSCORE_ASSISTANT_FAKE=1` in `config/services.env` makes the assistant service return deterministic results with no model call, so the command bar and PHP integration can be tested without a key.
 - Session transcripts under `docs/claude-log/` are written by the preserve-the-evidence plugin and gitignored.
 
 ## Build order and design documents
 
-Phase 0 plan: `docs/03-phase0-plan.md`. Phase 1 design: `db/`, `docs/04-mcp-tool-surface.md`, `docs/05-action-manifest.md`, `docs/build-specs/`. Phase 2 (auth + shell): `docs/06-phase2-shell.md`. Phase 3 conventions and progress: `docs/07-phase3-conventions.md`, `docs/08-phase3-progress.md`. Phase 4 services: `docs/09-phase4-conventions.md`, `docs/10-phase4-progress.md`. Customer orders: `docs/11` to `docs/13`.
+Phase 0 plan: `docs/cidery/03-phase0-plan.md`. Phase 1 design: `db/`, `docs/04-mcp-tool-surface.md`, `docs/05-action-manifest.md`, `docs/cidery/build-specs/`. Phase 2 (auth + shell): `docs/cidery/06-phase2-shell.md`. Phase 3 conventions and progress: `docs/cidery/07-phase3-conventions.md`, `docs/cidery/08-phase3-progress.md`. Phase 4 services: `docs/cidery/09-phase4-conventions.md`, `docs/cidery/10-phase4-progress.md`. Customer orders: `docs/11` to `docs/13`.

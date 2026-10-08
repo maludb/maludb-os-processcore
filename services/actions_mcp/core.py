@@ -16,7 +16,7 @@ from common import db
 from . import php, tokens
 from .resolve import ResolveError
 
-SERVER_NAME = "cidery_actions_mcp"
+SERVER_NAME = "processcore_actions_mcp"
 
 
 @dataclass

@@ -287,7 +287,7 @@ class SearchInput(Input):
 
 
 SEARCH_DESCRIPTION = """Call only when no purpose-built records tool answers the question. Runs one read-only SELECT (or WITH ... SELECT)
-over the cidery's record tables and views (schema app) as the read-only role with a 15 second timeout and a row cap; writes,
+over ProcessCore's record tables and views (schema app) as the read-only role with a 15 second timeout and a row cap; writes,
 multiple statements, comments and session functions are refused. Quantities are base units (L, kg, ea): divide liters by 3.785411784
 for gallons, kg by 0.45359237 for pounds, kg by 907.18474 for tons. Timestamps are UTC timestamptz; the client time zone is {tz}.
 Status columns hold codes such as 'posted', 'released', 'active'. Schema (table: column:type ...):

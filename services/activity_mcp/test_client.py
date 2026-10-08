@@ -3,7 +3,7 @@
     .venv/bin/python -m activity_mcp.test_client [URL] [--token T] [--list] [--call TOOL JSON]
     .venv/bin/python -m activity_mcp.test_client http://127.0.0.1/mcp/activity --suite
 
-Default URL http://127.0.0.1:8702/mcp, default token CIDERY_SERVICE_ACTIVITY_TOKEN."""
+Default URL http://127.0.0.1:8702/mcp, default token PROCESSCORE_SERVICE_ACTIVITY_TOKEN."""
 from __future__ import annotations
 
 import argparse
@@ -73,7 +73,7 @@ async def main() -> int:
     ap.add_argument("--suite", action="store_true")
     ap.add_argument("--full", action="store_true", help="print full results")
     a = ap.parse_args()
-    token = None if a.no_token else (a.token or config.get("CIDERY_SERVICE_ACTIVITY_TOKEN"))
+    token = None if a.no_token else (a.token or config.get("PROCESSCORE_SERVICE_ACTIVITY_TOKEN"))
     http = await connect(a.url, token)
     async with await connect(a.url, token) as probe_client:
         probe = await probe_client.post(a.url, json={"jsonrpc": "2.0", "id": 0, "method": "ping"},

@@ -132,7 +132,7 @@ class AssistantActionsInput(Window, Page):
 class McpUsageInput(Window, Page):
     token: str | None = Field(default=None, max_length=120, description="Only calls made with this access token (its name as created on the AI access tokens screen).")
     tool: str | None = Field(default=None, max_length=80, description="Only this tool name (records_search, activity_who_did, ...).")
-    server: Literal["cidery_records_mcp", "cidery_activity_mcp", "cidery_actions_mcp"] | None = Field(default=None, description="Only calls to this server.")
+    server: Literal["processcore_records_mcp", "processcore_activity_mcp", "processcore_actions_mcp"] | None = Field(default=None, description="Only calls to this server.")
     include_calls: bool = Field(default=True, description="List the individual calls (with arguments) as well as the per-token summary.")
 
 

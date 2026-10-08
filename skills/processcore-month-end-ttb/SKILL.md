@@ -1,6 +1,6 @@
 ---
-name: cidery-month-end-ttb
-description: The runbook for month end at the cidery — closing production and removals for the period, reconciling bulk and bottled wine (cider) gallons, building the TTB report (5120.17 or the brewery forms) per premises, and what needs a person before it is finalized.
+name: processcore-month-end-ttb
+description: The runbook for month end at ProcessCore — closing production and removals for the period, reconciling bulk and bottled wine (cider) gallons, building the TTB report (5120.17 or the brewery forms) per premises, and what needs a person before it is finalized.
 kind: runbook
 ---
 

@@ -4,9 +4,9 @@ declare(strict_types=1);
 /**
  * The MaluDB Business OS kernel (os-adoption, 2026-10-04; maludb-os-integration `os-adopt`, `php-sign-on-kit.md`).
  *
- * Behind ONE flag, OS_ENABLED (config/.env, written by the kernel's installer): off, Cidery runs standalone exactly as
+ * Behind ONE flag, OS_ENABLED (config/.env, written by the kernel's installer): off, ProcessCore runs standalone exactly as
  * before; on, the kernel's hand-off token is the only way in, people are managed in the kernel's directory, the
- * kernel's agents reach the handlers with the tenant's signed tokens, and the command bar runs Cidery's expert in the
+ * kernel's agents reach the handlers with the tenant's signed tokens, and the command bar runs ProcessCore's expert in the
  * kernel. Nothing here is reached while the flag is off except the verifiers, which are harmless.
  *
  * Verifiers, the session list, the user link, the directory mirror, the kernel calls. Loaded by app/bootstrap.php
@@ -20,7 +20,7 @@ function os_enabled(): bool
 
 function os_app_key(): string
 {
-    return (string) config('os.app_key', 'cidery');
+    return (string) config('os.app_key', 'processcore');
 }
 
 function os_launcher_url(): string
@@ -193,7 +193,7 @@ function os_end_member_sessions(PDO $pdo, int $memberId, string $by): int
 
 // ---- people: the link between app.users and the kernel's members (os-adopt adapter.md §3, §6) --------------------
 
-/** Cidery's roles in precedence order for the one `users.role` column (owner first). */
+/** ProcessCore's roles in precedence order for the one `users.role` column (owner first). */
 const OS_ROLE_PRECEDENCE = ['owner', 'production', 'receiving', 'quality', 'compliance', 'sales', 'viewer'];
 
 /** [role, os_roles] from what the kernel said: its roles (filtered to ours), the capability, the business role. */
@@ -279,7 +279,7 @@ function os_apply_member_row(PDO $pdo, array $m): bool
     return true;
 }
 
-/** An access[] row: the member's whole holding on Cidery replaces capability and roles; nothing held → every session ends. */
+/** An access[] row: the member's whole holding on ProcessCore replaces capability and roles; nothing held → every session ends. */
 function os_apply_access_row(PDO $pdo, array $a): bool
 {
     $memberId = (int) ($a['member_id'] ?? 0);

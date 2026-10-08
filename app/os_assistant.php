@@ -13,10 +13,10 @@ function os_assistant_turn(array $user, string $surface, string $message, string
     $memberId = (int) ($user['os_member_id'] ?? 0);
     if ($memberId < 1) {
         http_response_code(403);
-        echo $render(['message' => $message, 'reply' => 'Your account is not linked to the operating system; open Cidery from the launcher.', 'undoId' => null]);
+        echo $render(['message' => $message, 'reply' => 'Your account is not linked to the operating system; open ProcessCore from the launcher.', 'undoId' => null]);
         return;
     }
-    $_SESSION['assistant_conversation'] ??= 'cidery-' . bin2hex(random_bytes(8));
+    $_SESSION['assistant_conversation'] ??= 'processcore-' . bin2hex(random_bytes(8));
     $answer = kernel_call('POST', '/api/v1/agents/chat.php?agent=expert', [
         'utterance' => $message, 'screen' => $screen !== '' ? $screen : null,
         'context' => ['entity' => $entity !== '' ? $entity : null, 'record_id' => $recordId, 'application' => os_app_key(), 'surface' => $surface],
@@ -24,7 +24,7 @@ function os_assistant_turn(array $user, string $surface, string $message, string
     ], ['X-Acting-Member: ' . $memberId], $surface === 'ama' ? 100 : 75);
     $body = $answer['body'] ?? [];
     $fallback = [400 => 'The kernel did not know who was asking.', 403 => 'You are not allowed to use the assistant here.',
-                 404 => 'Cidery has no expert yet — a super-admin names one in the operating system.', 409 => 'The expert is busy; try again in a moment.',
+                 404 => 'ProcessCore has no expert yet — a super-admin names one in the operating system.', 409 => 'The expert is busy; try again in a moment.',
                  422 => 'Say what you want in a sentence or two.'];
     $error = null;
     if ($answer === null || $answer['status'] === 401 || $answer['status'] >= 500) {

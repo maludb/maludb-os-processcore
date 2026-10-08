@@ -13,7 +13,7 @@ $p = 'product-form';
         <div class="row"><div class="col-lg-12">
             <div class="card" id="product-form-card">
                 <div class="card-body">
-                    <div class="mb-4"><h5 class="fw-bold mb-0 me-4"><span class="d-block mb-2">Product</span><span class="fs-12 fw-normal text-muted text-truncate-1-line">What the cidery makes. Recipes, packaging, specs and approvals hang off the product.</span></h5></div>
+                    <div class="mb-4"><h5 class="fw-bold mb-0 me-4"><span class="d-block mb-2">Product</span><span class="fs-12 fw-normal text-muted text-truncate-1-line">What ProcessCore makes. Recipes, packaging, specs and approvals hang off the product.</span></h5></div>
                     <?= view('shared/validation-errors.php', ['errors' => array_values($errors), 'id' => 'product-form-errors']) ?>
                     <?= form_input($p, 'code', 'Code', $product['code'] ?? '', $errors, ['required' => true, 'maxlength' => 40, 'icon' => 'feather-hash', 'autofocus' => !$isEdit]) ?>
                     <?= form_input($p, 'name', 'Name', $product['name'] ?? '', $errors, ['required' => true, 'maxlength' => 120, 'icon' => 'feather-book-open']) ?>

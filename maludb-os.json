@@ -1,26 +1,26 @@
 {
   "schema": "maludb-os.application/1",
-  "catalog_key": "cidery",
-  "name": "Cidery",
-  "description": "Memory-first inventory, receiving and production for a cidery (beer and wine later): fruit and materials in, press runs, batches in tanks, packaging and kegs, quality and release, TTB compliance, customer orders and planning — every question answerable by an agent, every action a tool.",
+  "catalog_key": "processcore",
+  "name": "ProcessCore",
+  "description": "A base manufacturing application for converting processes — material in as lots, transformed by runs on equipment into other lots (products, co-products, scrap), packed, released by quality and shipped; every quantity on the inventory ledger, every lot traceable to what it came from. Industry is data, not code: a profile seeds the item classes, operations, measurements and vocabulary — steel processing the default (coils by heat with mill test reports, slit, cut to length, sheared and blanked into sheets and blanks, scrap sold by weight). Forked from the Cidery; the beverage layers removed. Every question answerable by an agent, every action a tool.",
   "business_area": "Operations",
-  "category": "other",
-  "icon": "feather-droplet",
+  "category": "manufacturing",
+  "icon": "feather-layers",
   "version": "1.0.0",
   "criticality": "normal",
   "vhost": {
-    "label": "cidery",
+    "label": "processcore",
     "document_root": "html",
     "internal_port_env": "APP_INTERNAL_PORT"
   },
   "database": {
-    "suffix": "cidery",
+    "suffix": "processcore",
     "migrations": "db",
     "provision": "deploy/os-provision.sh",
     "roles": {
-      "rw": "cidery_app",
-      "records_ro": "cidery_records_ro",
-      "activity_ro": "cidery_activity_ro"
+      "rw": "processcore_app",
+      "records_ro": "processcore_records_ro",
+      "activity_ro": "processcore_activity_ro"
     }
   },
   "runtime": {
@@ -68,12 +68,12 @@
     ]
   },
   "services": [
-    "deploy/cidery-records-mcp.service",
-    "deploy/cidery-activity-mcp.service",
-    "deploy/cidery-activity-ingest.service",
-    "deploy/cidery-activity-ingest.timer",
-    "deploy/cidery-directory-sync.service",
-    "deploy/cidery-directory-sync.timer"
+    "deploy/processcore-records-mcp.service",
+    "deploy/processcore-activity-mcp.service",
+    "deploy/processcore-activity-ingest.service",
+    "deploy/processcore-activity-ingest.timer",
+    "deploy/processcore-directory-sync.service",
+    "deploy/processcore-directory-sync.timer"
   ],
   "endpoints": [
     {
@@ -115,9 +115,9 @@
     "base_url_env": "APP_INTERNAL_PORT"
   },
   "skills": [
-    "skills/cidery-basics",
-    "skills/cidery-receiving-day",
-    "skills/cidery-month-end-ttb"
+    "skills/processcore-basics",
+    "skills/processcore-receiving-day",
+    "skills/processcore-month-end-ttb"
   ],
   "sso": {
     "path": "/sso",
@@ -255,9 +255,9 @@
         ]
       },
       "skills": [
-        "skills/cidery-basics",
-        "skills/cidery-receiving-day",
-        "skills/cidery-month-end-ttb"
+        "skills/processcore-basics",
+        "skills/processcore-receiving-day",
+        "skills/processcore-month-end-ttb"
       ]
     }
   ],

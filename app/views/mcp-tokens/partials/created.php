@@ -1,11 +1,11 @@
 <?php /** @var array $created  @var string $baseUrl */
 $url = mcp_token_endpoint($baseUrl, $created['scope']);
-$server = 'cidery-' . $created['scope'];
+$server = 'processcore-' . $created['scope'];
 $cli = 'claude mcp add --transport http ' . $server . ' ' . $url . ' --header "Authorization: Bearer ' . $created['token'] . '"';
 $desktop = json_encode(['mcpServers' => [$server => [
     'command' => 'npx',
-    'args' => ['-y', 'mcp-remote', $url, '--header', 'Authorization:${CIDERY_AUTH}'],
-    'env' => ['CIDERY_AUTH' => 'Bearer ' . $created['token']],
+    'args' => ['-y', 'mcp-remote', $url, '--header', 'Authorization:${PROCESSCORE_AUTH}'],
+    'env' => ['PROCESSCORE_AUTH' => 'Bearer ' . $created['token']],
 ]]], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 ?>
 <div class="col-lg-12">

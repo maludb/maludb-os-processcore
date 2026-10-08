@@ -3,7 +3,7 @@
 - app_roles: the roles this application offers and the rights each gives (os.app-roles/1), from db/021's catalogue —
   the one tool the kernel's own token may call (roles-and-rights.md).
 - find_<kind>: one resolver per entity kind the kernel's actions server must turn a label into an id for
-  (deploy/kernel-registry-cidery.json). Answers {"rows": [{"<kind>_id", "label", "detail"}]} for `q`.
+  (deploy/kernel-registry-processcore.json). Answers {"rows": [{"<kind>_id", "label", "detail"}]} for `q`.
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ class NoInput(Input):
 
 
 @records_tool("app_roles", "Roles and rights",
-              """The roles Cidery offers and the rights each gives (os.app-roles/1), read by the Business OS kernel to grant
+              """The roles ProcessCore offers and the rights each gives (os.app-roles/1), read by the Business OS kernel to grant
               people and agents. Not for answering questions about records.""")
 async def app_roles(p: NoInput) -> dict:
     rights = await db.fetch_all("records", "SELECT right_key, description FROM app.app_rights ORDER BY sort_order")

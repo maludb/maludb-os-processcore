@@ -1,8 +1,8 @@
 {
     "schema": "maludb-os.registry/1",
-    "app_key": "cidery",
-    "name": "Cidery",
-    "note": "The kernel installer (bin/app_install.php, step registry) writes mcp/registries/cidery.json from this resolve block plus mcp/action_registry.json. Each find_<kind> tool on the records MCP server answers {\"rows\": [{<kind>_id, label, detail}]} for `q`; the kernel substitutes the id into the endpoint path.",
+    "app_key": "processcore",
+    "name": "ProcessCore",
+    "note": "The kernel installer (bin/app_install.php, step registry) writes mcp/registries/processcore.json from this resolve block plus mcp/action_registry.json. Each find_<kind> tool on the records MCP server answers {\"rows\": [{<kind>_id, label, detail}]} for `q`; the kernel substitutes the id into the endpoint path.",
     "resolve": {
         "batch": {
             "tool": "find_batch",

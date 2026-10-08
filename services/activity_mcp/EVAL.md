@@ -1,6 +1,6 @@
 # Activity MCP server: evaluation (A1 to A12)
 
-**Date:** 2026-10-01. **Data:** about 1,650 real rows in `app.activity_log` (02:48 to 14:40 UTC, all on 2026-10-01 local except a few late on 2026-09-30), one active user (Ed Honour, owner) plus a disabled one (Cellar Hand). **Client:** `services/activity_mcp/test_client.py` (mcp 2.2 streamable HTTP client). It was run directly on `http://127.0.0.1:8702/mcp` and through Apache at `http://127.0.0.1/mcp/activity`, with token `CIDERY_SERVICE_ACTIVITY_TOKEN`. Both runs went 36/36: 26 answers, 5 guarded-SQL rejections and 4 actionable errors, all as expected.
+**Date:** 2026-10-01. **Data:** about 1,650 real rows in `app.activity_log` (02:48 to 14:40 UTC, all on 2026-10-01 local except a few late on 2026-09-30), one active user (Ed Honour, owner) plus a disabled one (Cellar Hand). **Client:** `services/activity_mcp/test_client.py` (mcp 2.2 streamable HTTP client). It was run directly on `http://127.0.0.1:8702/mcp` and through Apache at `http://127.0.0.1/mcp/activity`, with token `PROCESSCORE_SERVICE_ACTIVITY_TOKEN`. Both runs went 36/36: 26 answers, 5 guarded-SQL rejections and 4 actionable errors, all as expected.
 
 Re-run: `cd /var/www/services && .venv/bin/python -m activity_mcp.test_client http://127.0.0.1/mcp/activity --suite --full`
 

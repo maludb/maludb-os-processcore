@@ -3,12 +3,12 @@ declare(strict_types=1);
 /**
  * The action registry for the Business OS kernel's actions server (mcp-and-api.md §3; os-adoption 2026-10-04).
  *
- * Cidery's source of truth is docs/05-action-manifest.md, already parsed into config/manifest.json by
+ * ProcessCore's source of truth is docs/05-action-manifest.md, already parsed into config/manifest.json by
  * services/actions_mcp/build_manifest.py (its own actions server reads that). The kernel's actions server reads a
  * different shape — mcp/action_registry.json: one entry per action with a flat endpoint, typed params, built,
  * log_event, who, confirm, approval, undo — so this script derives it. Path parameters ({id}) become named entity
  * parameters ("/vessels/{vessel}/status") that the kernel resolves through the records MCP server's find_* tools
- * (deploy/kernel-registry-cidery.json names them) and substitutes into the path.
+ * (deploy/kernel-registry-processcore.json names them) and substitutes into the path.
  *
  *   php bin/build_action_registry.php            writes mcp/action_registry.json
  *   php bin/build_action_registry.php --check    exits 1 when the file is stale
@@ -171,9 +171,9 @@ foreach ($resolveParams as $kind => $names) {
     $resolve[$kind] = ['tool' => 'find_' . $kind, 'query_param' => 'q', 'id_field' => $kind . '_id', 'label_field' => 'label', 'params' => array_keys($names)];
 }
 ksort($resolve);
-$wrapper = ['schema' => 'maludb-os.registry/1', 'app_key' => 'cidery', 'name' => 'Cidery',
-    'note' => 'The kernel installer (bin/app_install.php, step registry) writes mcp/registries/cidery.json from this resolve block plus mcp/action_registry.json. Each find_<kind> tool on the records MCP server answers {"rows": [{<kind>_id, label, detail}]} for `q`; the kernel substitutes the id into the endpoint path.',
+$wrapper = ['schema' => 'maludb-os.registry/1', 'app_key' => 'processcore', 'name' => 'ProcessCore',
+    'note' => 'The kernel installer (bin/app_install.php, step registry) writes mcp/registries/processcore.json from this resolve block plus mcp/action_registry.json. Each find_<kind> tool on the records MCP server answers {"rows": [{<kind>_id, label, detail}]} for `q`; the kernel substitutes the id into the endpoint path.',
     'resolve' => $resolve];
 @mkdir($root . '/deploy');
-file_put_contents($root . '/deploy/kernel-registry-cidery.json', json_encode($wrapper, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
-printf("mcp/action_registry.json: %d actions (%d built), %d screens; deploy/kernel-registry-cidery.json: %d resolvers\n", count($actions), $built, count($screens), count($resolve));
+file_put_contents($root . '/deploy/kernel-registry-processcore.json', json_encode($wrapper, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+printf("mcp/action_registry.json: %d actions (%d built), %d screens; deploy/kernel-registry-processcore.json: %d resolvers\n", count($actions), $built, count($screens), count($resolve));

@@ -1,5 +1,5 @@
--- 023_equipment_schedule.sql — equipment scheduling (docs/15-equipment-schedule-plan.md, approved 2026-10-08, all the
--- recommendations; design docs/16-equipment-schedule-design.md). Run as cidery_app.
+-- 023_equipment_schedule.sql — equipment scheduling (docs/cidery/15-equipment-schedule-plan.md, approved 2026-10-08, all the
+-- recommendations; design docs/cidery/16-equipment-schedule-design.md). Run as processcore_app.
 --
 -- Equipment that holds no liquid sits beside the vessels; one table of bookings holds every reservation of either
 -- (the production order's vessel plan moves into it and app.production_order_vessels becomes a view of the same shape);

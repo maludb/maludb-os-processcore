@@ -4,11 +4,11 @@ declare(strict_types=1);
 /**
  * JSON mode for the Business OS kernel's actions server (maludb-os-integration, mcp-and-api.md §3), os-adoption 2026-10-04.
  *
- * Cidery's handlers answer HTMX: a success is a 2xx with HX-Location (navigate to the record) and HX-Trigger; a
+ * ProcessCore's handlers answer HTMX: a success is a 2xx with HX-Location (navigate to the record) and HX-Trigger; a
  * validation failure is a 422 with the form re-rendered (invalid-feedback divs beside their inputs, alert-danger
  * lists); 403/404 render shared/error.php. The kernel's actions server wants {ok:true, location} · 422
  * {error:{code:'invalid', message, errors, fields}} · {error:{code, message}}. Rather than rewrite 130 handlers,
- * the whole answer is buffered and translated at shutdown — the same reading Cidery's own actions server does in
+ * the whole answer is buffered and translated at shutdown — the same reading ProcessCore's own actions server does in
  * Python (services/actions_mcp/php.py). A handler that reports nothing a browser would not also see still answers.
  */
 
@@ -74,7 +74,7 @@ function json_mode_finish(): void
     }
     if ($status === 401 || $launcher) {
         http_response_code(401);
-        echo json_encode(['error' => ['code' => 'unauthorized', 'message' => 'The token names no one Cidery admits.']]);
+        echo json_encode(['error' => ['code' => 'unauthorized', 'message' => 'The token names no one ProcessCore admits.']]);
         return;
     }
     if ($status < 400 && $errors === [] && (is_array($reported) ? $reported['ok'] : true)) {
@@ -83,7 +83,7 @@ function json_mode_finish(): void
         if (preg_match('/data-record-id="(\d+)"/', $html, $m)) {
             $out['record_id'] = (int) $m[1];
         }
-        // Cidery's handlers navigate to the LIST after a save; the kernel wants the record. The handler logged the
+        // ProcessCore's handlers navigate to the LIST after a save; the kernel wants the record. The handler logged the
         // record it touched under this request id (every write does) — that row names it.
         if (!isset($out['record_id']) && (!is_string($location) || !preg_match('~/(\d+)/?(?:[?#].*)?$~', $location))) {
             try {

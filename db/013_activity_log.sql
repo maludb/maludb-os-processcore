@@ -46,9 +46,9 @@ $$;
 
 -- Ingestion into MaluDB: each activity row becomes an episode (the event with
 -- its full payload) and one SVO edge (actor -verb-> entity) in the 'activity'
--- namespace, so both replay and graph questions work. Runs under cidery_app,
+-- namespace, so both replay and graph questions work. Runs under processcore_app,
 -- whose search_path includes the memory schema. Called by the systemd timer
--- in deploy/cidery-activity-ingest.timer every minute.
+-- in deploy/processcore-activity-ingest.timer every minute.
 CREATE OR REPLACE FUNCTION app.activity_ingest_pending(p_limit int DEFAULT 500)
 RETURNS int LANGUAGE plpgsql AS $$
 DECLARE

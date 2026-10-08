@@ -17,7 +17,7 @@ from mcp.client.streamable_http import streamable_http_client
 from common import config
 from common.config import ROOT
 
-URL = f"http://127.0.0.1:{config.get('CIDERY_ACTIONS_MCP_PORT', '8703')}/mcp"
+URL = f"http://127.0.0.1:{config.get('PROCESSCORE_ACTIONS_MCP_PORT', '8703')}/mcp"
 
 
 def mint(user_id: int, ttl: int = 300) -> str:

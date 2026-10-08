@@ -1,4 +1,4 @@
-"""Unified assistant service (localhost only, port CIDERY_ASSISTANT_PORT, default 8765).
+"""Unified assistant service (localhost only, port PROCESSCORE_ASSISTANT_PORT, default 8765).
 
     POST /message   one turn from the command bar or the AMA page (called by PHP only)
     GET  /health    liveness and configuration summary (no secrets)
@@ -36,7 +36,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 
 NOT_CONFIGURED = "The assistant is not configured yet: add ANTHROPIC_API_KEY to config/services.env."
 
-app = FastAPI(title="cidery_assistant", docs_url=None, redoc_url=None, openapi_url=None)
+app = FastAPI(title="processcore_assistant", docs_url=None, redoc_url=None, openapi_url=None)
 _user_locks: dict[int, asyncio.Lock] = {}
 
 
@@ -68,7 +68,7 @@ def _api_key() -> str | None:
 
 
 def _fake() -> bool:
-    return config.get("CIDERY_ASSISTANT_FAKE", "0") == "1"
+    return config.get("PROCESSCORE_ASSISTANT_FAKE", "0") == "1"
 
 
 def _b64url_decode(text: str) -> bytes:
@@ -82,7 +82,7 @@ def _b64url_encode(raw: bytes) -> str:
 def token_user(token: str | None) -> int | None:
     """The user id a PHP-minted action token carries (same HMAC as app/auth.php), or None.
     Python only verifies; it never mints."""
-    key = config.get("CIDERY_ACTION_TOKEN_KEY") or ""
+    key = config.get("PROCESSCORE_ACTION_TOKEN_KEY") or ""
     if not token or len(key) < 32 or token.count(".") != 1:
         return None
     payload, signature = token.split(".")
@@ -114,11 +114,11 @@ def _empty(reply: str, session_id: str | None, mode: str) -> dict:
 async def health() -> dict:
     screens, actions, source = manifest.load()
     return {
-        "status": "ok", "server": "cidery_assistant",
+        "status": "ok", "server": "processcore_assistant",
         "mode": "fake" if _fake() else ("live" if _api_key() else "unconfigured"),
         "api_key_configured": _api_key() is not None,
-        "router_model": config.get("CIDERY_ROUTER_MODEL"), "router_effort": config.get("CIDERY_ROUTER_EFFORT", "low"),
-        "ama_model": config.get("CIDERY_AMA_MODEL"),
+        "router_model": config.get("PROCESSCORE_ROUTER_MODEL"), "router_effort": config.get("PROCESSCORE_ROUTER_EFFORT", "low"),
+        "ama_model": config.get("PROCESSCORE_AMA_MODEL"),
         "manifest": {"source": source, "screens": len(screens), "actions": len(actions)},
     }
 
@@ -139,7 +139,7 @@ async def message(body: MessageIn) -> dict:
     if key is None:
         return _empty(NOT_CONFIGURED, session_id, "unconfigured")
 
-    tz_name = body.timezone or config.get("CIDERY_TIMEZONE", "America/New_York")
+    tz_name = body.timezone or config.get("PROCESSCORE_TIMEZONE", "America/New_York")
     try:
         today = body.today or dt.datetime.now(ZoneInfo(tz_name)).date().isoformat()
     except Exception:
@@ -148,7 +148,7 @@ async def message(body: MessageIn) -> dict:
                                   screen=body.screen, entity=body.entity, record_id=body.record_id,
                                   confirmed=body.confirmed)
     prompt = ("[confirmed] " if body.confirmed else "") + body.message
-    timeout = float(config.get("CIDERY_ROUTER_TIMEOUT_S", "18")) if body.surface == "command_bar" else float(config.get("CIDERY_AMA_TIMEOUT_S", "57"))
+    timeout = float(config.get("PROCESSCORE_ROUTER_TIMEOUT_S", "18")) if body.surface == "command_bar" else float(config.get("PROCESSCORE_AMA_TIMEOUT_S", "57"))
 
     lock = _user_locks.setdefault(body.user.id, asyncio.Lock())
     async with lock:  # one turn at a time per user: a session transcript has one writer
@@ -161,7 +161,7 @@ async def message(body: MessageIn) -> dict:
 
 
 def main() -> None:
-    port = int(config.get("CIDERY_ASSISTANT_PORT", "8765"))
+    port = int(config.get("PROCESSCORE_ASSISTANT_PORT", "8765"))
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")
 
 

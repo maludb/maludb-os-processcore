@@ -45,7 +45,7 @@ def parse(raw: str | None) -> ActionToken:
     if len(parts) != 2:
         raise TokenError("The action token is malformed.")
     payload, signature = parts
-    key = config.require("CIDERY_ACTION_TOKEN_KEY").encode()
+    key = config.require("PROCESSCORE_ACTION_TOKEN_KEY").encode()
     expected = _b64encode(hmac.new(key, payload.encode(), hashlib.sha256).digest())
     if not hmac.compare_digest(expected, signature):
         raise TokenError("The action token is not valid.")

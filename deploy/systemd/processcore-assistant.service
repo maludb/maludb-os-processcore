@@ -1,6 +1,6 @@
 [Unit]
-Description=Cidery unified assistant (Claude Agent SDK; command bar + Ask me anything), localhost:8765
-After=network-online.target postgresql.service cidery-records-mcp.service cidery-activity-mcp.service cidery-actions-mcp.service
+Description=ProcessCore unified assistant (Claude Agent SDK; command bar + Ask me anything), localhost:8765
+After=network-online.target postgresql.service processcore-records-mcp.service processcore-activity-mcp.service processcore-actions-mcp.service
 Wants=network-online.target
 
 [Service]

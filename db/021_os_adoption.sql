@@ -1,4 +1,4 @@
--- 021_os_adoption.sql — Cidery beside the MaluDB Business OS kernel (os-adopt, 2026-10-04). Run as cidery_app.
+-- 021_os_adoption.sql — ProcessCore beside the MaluDB Business OS kernel (os-adopt, 2026-10-04). Run as processcore_app.
 -- The application keeps its users table and links each user to the kernel's member (users.os_member_id);
 -- the kernel's roles for a member are a SET (users.os_roles); the sign-on kit's tables sit beside
 -- (php-sign-on-kit.md §2); the roles-and-rights catalogue the records MCP publishes as app_roles.
@@ -54,7 +54,7 @@ ALTER TABLE app.activity_log ADD CONSTRAINT activity_log_source_check
     CHECK (source IN ('screen', 'command_bar', 'ama', 'mcp', 'system', 'agent', 'cron', 'api', 'web'));
 ALTER TABLE app.activity_log ADD COLUMN IF NOT EXISTS agent_run_id bigint;   -- the kernel's run id when an agent acted (no FK)
 
--- 4. The roles and rights catalogue (roles-and-rights.md): what the kernel grants, in Cidery's words -------
+-- 4. The roles and rights catalogue (roles-and-rights.md): what the kernel grants, in ProcessCore's words -------
 CREATE TABLE IF NOT EXISTS app.app_rights (
     right_key   text PRIMARY KEY CHECK (right_key ~ '^[a-z][a-z0-9_.]{0,59}$'),
     description text NOT NULL,
@@ -82,7 +82,7 @@ INSERT INTO app.app_rights (right_key, description, sort_order) VALUES
     ('quality.write',    'Quality: lab readings, sensory, specifications, releases and dispositions',                                     40),
     ('compliance.write', 'Compliance: removals, TTB reports, reason codes, standard-cost approvals, finished lots',                       50),
     ('sales.write',      'Sales: customers, customer orders, standing orders, planning, removals to customers',                           60),
-    ('cidery.admin',     'Run the cidery: users, organization settings, AI access tokens — everything',                                  90)
+    ('processcore.admin',     'Run ProcessCore: users, organization settings, AI access tokens — everything',                                  90)
 ON CONFLICT (right_key) DO UPDATE SET description = EXCLUDED.description, sort_order = EXCLUDED.sort_order;
 
 INSERT INTO app.app_roles (role_key, name, description, capability, is_admin, sort_order) VALUES
@@ -92,7 +92,7 @@ INSERT INTO app.app_roles (role_key, name, description, capability, is_admin, so
     ('quality',    'Quality',    'Lab and sensory readings, specifications, releases.',                            'write', false, 40),
     ('compliance', 'Compliance', 'Removals, TTB reports, reason codes, approvals.',                                'write', false, 50),
     ('sales',      'Sales',      'Customers, customer orders, planning.',                                          'write', false, 60),
-    ('owner',      'Owner',      'Runs the cidery: everything, plus users, settings and AI access tokens.',       'admin', true,  90)
+    ('owner',      'Owner',      'Runs ProcessCore: everything, plus users, settings and AI access tokens.',       'admin', true,  90)
 ON CONFLICT (role_key) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description, capability = EXCLUDED.capability,
                                      is_admin = EXCLUDED.is_admin, sort_order = EXCLUDED.sort_order;
 
@@ -104,7 +104,7 @@ INSERT INTO app.app_role_rights (role_key, right_key) VALUES
     ('compliance', 'records.read'), ('compliance', 'compliance.write'),
     ('sales', 'records.read'), ('sales', 'sales.write'),
     ('owner', 'records.read'), ('owner', 'purchasing.write'), ('owner', 'production.write'), ('owner', 'quality.write'),
-    ('owner', 'compliance.write'), ('owner', 'sales.write'), ('owner', 'cidery.admin')
+    ('owner', 'compliance.write'), ('owner', 'sales.write'), ('owner', 'processcore.admin')
 ON CONFLICT DO NOTHING;
 
 -- One read for the records MCP server's app_roles tool (os.app-roles/1).

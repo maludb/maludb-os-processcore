@@ -1,11 +1,11 @@
-# /etc/systemd/system/cidery-actions-mcp.service
-# The actions MCP server (cidery_actions_mcp) on 127.0.0.1 port 8703: navigation, voice
+# /etc/systemd/system/processcore-actions-mcp.service
+# The actions MCP server (processcore_actions_mcp) on 127.0.0.1 port 8703: navigation, voice
 # actions and undo for the assistant. Localhost only, never proxied by Apache. No bearer:
 # every tool call carries the X-Action-Token PHP minted for the message, and every write
 # goes through the app's own PHP endpoints. Needs config/manifest.json
 # (services/actions_mcp/build_manifest.py).
 [Unit]
-Description=Cidery actions MCP server (cidery_actions_mcp, port 8703)
+Description=ProcessCore actions MCP server (processcore_actions_mcp, port 8703)
 After=network.target postgresql.service apache2.service
 Wants=postgresql.service
 

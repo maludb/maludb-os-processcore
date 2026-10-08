@@ -8,8 +8,8 @@ Two client-facing read servers per client, per the mcp-servers skill. Python + F
 
 | Server | Name | Role | Backing |
 |---|---|---|---|
-| Records | `cidery_records_mcp` | `cidery_records_ro` | `app.*` tables, views in `db/012_costing_views.sql`, `app.trace_forward`, `app.trace_backward` |
-| Activity | `cidery_activity_mcp` | `cidery_activity_ro` | `app.activity_log`, the `memory` schema facades (`maludb_episode`, `maludb_memory_search`, `maludb_episode_get`, `text_search`) |
+| Records | `processcore_records_mcp` | `processcore_records_ro` | `app.*` tables, views in `db/012_costing_views.sql`, `app.trace_forward`, `app.trace_backward` |
+| Activity | `processcore_activity_mcp` | `processcore_activity_ro` | `app.activity_log`, the `memory` schema facades (`maludb_episode`, `maludb_memory_search`, `maludb_episode_get`, `text_search`) |
 
 Endpoints: `https://{client}.{domain}/mcp/records` and `/mcp/activity` (domain pending, see 03 section 6 item 8).
 
@@ -129,7 +129,7 @@ Endpoints: `https://{client}.{domain}/mcp/records` and `/mcp/activity` (domain p
 
 | Tool | Input | Rules |
 |---|---|---|
-| `records_search` | `sql` (one SELECT), `limit<=200` | Parsed and rejected unless a single `SELECT` or `WITH ... SELECT`; no semicolons; runs under `cidery_records_ro` with `statement_timeout = 15s` and the row cap; description embeds a schema summary generated from `information_schema` at startup (tables, columns, the views). Auth tables are not readable by the role, so they never appear. |
+| `records_search` | `sql` (one SELECT), `limit<=200` | Parsed and rejected unless a single `SELECT` or `WITH ... SELECT`; no semicolons; runs under `processcore_records_ro` with `statement_timeout = 15s` and the row cap; description embeds a schema summary generated from `information_schema` at startup (tables, columns, the views). Auth tables are not readable by the role, so they never appear. |
 
 ## Activity server: tools by question
 

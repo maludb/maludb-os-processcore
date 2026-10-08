@@ -65,11 +65,11 @@ class BearerTokenMiddleware:
             os_kernel.request_is_kernel.reset(kernel_var)
             os_kernel.request_grants.reset(grants_var)
             await _respond(send, 401, {"error": "invalid_token", "error_description": f"A valid {self.scope} access token is required. Create one under Setup > AI access tokens."},
-                           extra=[(b"www-authenticate", b'Bearer realm="cidery"')])
+                           extra=[(b"www-authenticate", b'Bearer realm="processcore"')])
             return
         token_var = current_token_name.set(name)
         server_var = current_server.set(self.server_name)
-        prices_var = current_show_prices.set(headers.get("x-cidery-show-prices", "1").strip() != "0")
+        prices_var = current_show_prices.set(headers.get("x-processcore-show-prices", "1").strip() != "0")
         try:
             await self.app(scope, receive, send)
         finally:

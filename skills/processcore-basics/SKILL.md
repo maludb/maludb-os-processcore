@@ -1,9 +1,9 @@
 ---
-name: cidery-basics
-description: How to read and act in Cidery — the record vocabulary (items, lots, batches, vessels, removals), how to resolve what a person means before calling a tool, which tool answers which question, and which actions pause for approval. Use whenever you hold Cidery's tools.
+name: processcore-basics
+description: How to read and act in ProcessCore — the record vocabulary (items, lots, batches, vessels, removals), how to resolve what a person means before calling a tool, which tool answers which question, and which actions pause for approval. Use whenever you hold ProcessCore's tools.
 ---
 
-# Cidery basics
+# ProcessCore basics
 
 ## Resolve first
 Every entity parameter of an action (`vessel`, `batch`, `lot`, `po`, `receipt`, `supplier`, `product`, `customer`,

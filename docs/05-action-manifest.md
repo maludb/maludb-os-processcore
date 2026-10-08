@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-01
 **Status:** Phase 1 deliverable for approval, alongside the schema in `db/` and [04-mcp-tool-surface.md](04-mcp-tool-surface.md).
-**Contract:** every screen the application has is in the screen registry; every state change a person can make is in the action registry. The actions MCP server (`cidery_actions_mcp`, localhost only, per the chat-actions skill) generates its `navigate` description and its action tools from this file at startup. A screen or action missing here is unreachable by voice, which counts as unfinished design.
+**Contract:** every screen the application has is in the screen registry; every state change a person can make is in the action registry. The actions MCP server (`processcore_actions_mcp`, localhost only, per the chat-actions skill) generates its `navigate` description and its action tools from this file at startup. A screen or action missing here is unreachable by voice, which counts as unfinished design.
 
 ## URL conventions
 

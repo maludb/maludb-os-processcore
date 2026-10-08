@@ -1,5 +1,5 @@
 [Unit]
-Description=Cidery records MCP server (loopback :{{MCP_RECORDS_PORT}})
+Description=ProcessCore activity MCP server (loopback :{{MCP_ACTIVITY_PORT}})
 After=network.target postgresql.service
 
 [Service]
@@ -8,7 +8,7 @@ User=www-data
 Group=www-data
 WorkingDirectory={{APP_DIR}}/services
 Environment=PYTHONUNBUFFERED=1
-ExecStart={{APP_DIR}}/services/.venv/bin/python -m records_mcp.server
+ExecStart={{APP_DIR}}/services/.venv/bin/python -m activity_mcp.server
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true

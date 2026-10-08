@@ -5,7 +5,7 @@ const ORDER_STATUSES = ['draft' => 'Draft', 'confirmed' => 'Confirmed', 'in_fulf
 // List filter: "open" is every order still to be filled (draft, confirmed, in fulfillment).
 const ORDER_STATUS_FILTERS = ['open' => 'Open orders'] + ORDER_STATUSES;
 const ORDER_OPEN_STATUSES = ['draft', 'confirmed', 'in_fulfillment'];
-// Locked colors (docs/12-customer-orders-design.md): closed is secondary here, unlike purchase orders.
+// Locked colors (docs/cidery/12-customer-orders-design.md): closed is secondary here, unlike purchase orders.
 const ORDER_STATUS_COLORS = ['draft' => 'dark', 'confirmed' => 'info', 'in_fulfillment' => 'info', 'shipped' => 'success', 'closed' => 'secondary', 'cancelled' => 'danger',
                              'open' => 'info', 'closed_short' => 'warning'];
 const ORDER_DESTINATIONS = ['tax_paid_sale' => 'Tax-paid sale', 'taproom_transfer' => 'Taproom transfer', 'in_bond_transfer' => 'In-bond transfer', 'export' => 'Export'];

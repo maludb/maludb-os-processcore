@@ -1,6 +1,6 @@
 ---
-name: cidery-receiving-day
-description: The runbook for a receiving day at the cidery — what is expected, how to bring a delivery in against its purchase order, weigh tags for fruit, quality holds, and the end-of-day check that nothing is left unposted.
+name: processcore-receiving-day
+description: The runbook for a receiving day at ProcessCore — what is expected, how to bring a delivery in against its purchase order, weigh tags for fruit, quality holds, and the end-of-day check that nothing is left unposted.
 kind: runbook
 ---
 

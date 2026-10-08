@@ -1,4 +1,4 @@
-"""Customer orders, standing orders and planning tools (questions O1 to O8 in docs/12-customer-orders-design.md).
+"""Customer orders, standing orders and planning tools (questions O1 to O8 in docs/cidery/12-customer-orders-design.md).
 
 Prices and order values are left out unless the caller may see them (common.activity.current_show_prices:
 owner and sales in the app's assistant; client tokens, which only owners create, always may). The planning
@@ -187,7 +187,7 @@ async def standing_orders_find(p: StandingFindInput) -> dict:
 
 async def _projection(level: str, weeks: int) -> dict:
     """Run the PHP projection engine under the read-only role and return its JSON."""
-    keys = ("CIDERY_DB_HOST", "CIDERY_DB_PORT", "CIDERY_DB_NAME", "CIDERY_RECORDS_DB_USER", "CIDERY_RECORDS_DB_PASSWORD")
+    keys = ("PROCESSCORE_DB_HOST", "PROCESSCORE_DB_PORT", "PROCESSCORE_DB_NAME", "PROCESSCORE_RECORDS_DB_USER", "PROCESSCORE_RECORDS_DB_PASSWORD")
     env = {**os.environ, **{k: config.get(k) or "" for k in keys}}
     proc = await asyncio.create_subprocess_exec("php", str(ROOT / "scripts" / "planning-json.php"), level, str(weeks), env=env,
                                                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)

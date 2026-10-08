@@ -4,14 +4,14 @@ declare(strict_types=1);
  * Activity memory, every minute (memory.md §2). Two destinations, one timer:
  *   1. the in-database MaluDB memory schema the activity MCP server reads (app.activity_ingest_pending(), as before);
  *   2. beside the Business OS kernel, the tenant's ONE MaluDB through its API — one `activity` episode per row,
- *      payload first key "application": "cidery", checkpoint app.activity_ingest_state.last_id, advisory-locked,
+ *      payload first key "application": "processcore", checkpoint app.activity_ingest_state.last_id, advisory-locked,
  *      stop at the first rejected row, a clean no-op when MALUDB_API_URL / MALUDB_API_TOKEN are not configured.
- * Replaces deploy/activity-ingest.sh (which looped over the standalone product's cidery_host registry).
+ * Replaces deploy/activity-ingest.sh (which looped over the standalone product's processcore_host registry).
  */
 if (PHP_SAPI !== 'cli') { fwrite(STDERR, "CLI only.\n"); exit(1); }
 require_once dirname(__DIR__) . '/app/bootstrap.php';
 $pdo = db();
-if (!(bool) $pdo->query("SELECT pg_try_advisory_lock(hashtext('cidery_activity_ingest'))")->fetchColumn()) {
+if (!(bool) $pdo->query("SELECT pg_try_advisory_lock(hashtext('processcore_activity_ingest'))")->fetchColumn()) {
     exit(0);
 }
 // 1. the in-database memory schema

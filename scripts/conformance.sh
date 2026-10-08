@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Mechanical per-slice conformance checks (docs/07-phase3-conventions.md, new-app skill).
+# Mechanical per-slice conformance checks (docs/cidery/07-phase3-conventions.md, new-app skill).
 # Usage: scripts/conformance.sh <feature-dir> [<feature-dir> ...]   (names under html/ and app/views/)
 set -u
 cd "$(dirname "$0")/.."

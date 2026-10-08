@@ -147,7 +147,7 @@ UPDATE app.equipment_reservations SET notes = 'CIP, acid' WHERE notes = 'CIP';
 SELECT pg_temp.check('the touch trigger moves updated_at', (SELECT updated_at > created_at FROM app.equipment_reservations WHERE notes = 'CIP, acid'));
 
 -- 9. Grants: the records reader sees the views and the function and cannot write; the app role writes -------------
-SET ROLE cidery_records_ro;
+SET ROLE processcore_records_ro;
 SELECT pg_temp.check('records reader reads v_equipment_schedule', (SELECT count(*) FROM app.v_equipment_schedule) >= 4);
 SELECT pg_temp.check('records reader reads v_equipment_resources and equipment', (SELECT count(*) FROM app.v_equipment_resources) >= 4 AND (SELECT count(*) FROM app.equipment) = 1);
 SELECT pg_temp.check('records reader calls equipment_clashes and client_timezone',

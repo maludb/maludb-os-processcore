@@ -21,7 +21,7 @@ function verify_csrf(): void
         return;
     }
     // CSRF protects cookie sessions. A request authenticated by an action token carries no
-    // cookie session; the HMAC token (localhost only, short-lived) is its authorization — Cidery's
+    // cookie session; the HMAC token (localhost only, short-lived) is its authorization — ProcessCore's
     // own, or under the Business OS the tenant's relayed token (app/os.php).
     if (empty($_SESSION['user_id']) && function_exists('verify_action_token') && verify_action_token($_SERVER['HTTP_X_ACTION_TOKEN'] ?? null) !== null) {
         return;

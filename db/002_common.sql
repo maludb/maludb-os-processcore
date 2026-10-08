@@ -1,4 +1,4 @@
--- 002_common.sql — helpers every later file relies on. Run as cidery_app.
+-- 002_common.sql — helpers every later file relies on. Run as processcore_app.
 SET search_path = app, public;
 
 -- updated_at maintenance -----------------------------------------------------

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-// The Tank view (Inventory, docs/14-tank-view.md): every active vessel with what it holds, laid out as it stands on the
+// The Tank view (Inventory, docs/cidery/14-tank-view.md): every active vessel with what it holds, laid out as it stands on the
 // floor. Positions are grid units on app.vessels (db/022); a vessel never placed is laid out after the placed ones.
 
 const TANK_VIEW_GRID = 20;          // px per grid unit in the screen
